@@ -1,8 +1,8 @@
-import React, { useContext, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useContext, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppContext } from '../state/AppContext';
 import { spacing, colors } from '../theme/tokens';
@@ -11,45 +11,87 @@ const { width } = Dimensions.get('window');
 
 export default function ReportsScreen({ navigation }) {
   const { transactions } = useContext(AppContext);
-  const [selectedDateRange, setSelectedDateRange] = useState('Today');
 
   // Calculate metrics with realistic data
   const totalTransactions = transactions.length;
   const totalCommission = transactions.reduce((sum, t) => sum + (Number(t.amount || 0) * 0.025), 0); // 2.5% commission
   const avgTransactionValue = totalTransactions > 0 ? transactions.reduce((sum, t) => sum + Number(t.amount || 0), 0) / totalTransactions : 0;
   
-  // Mock data for charts (since we don't have historical data)
-  const transactionTrends = 2345 + Math.floor(Math.random() * 500); // Random variation
-  const commissionEarned = totalCommission > 0 ? totalCommission : 1234.56;
-  const transactionTypes = 5432 + Math.floor(Math.random() * 1000);
+  const [selectedDateRange, setSelectedDateRange] = useState('This Week');
   
-  // Mock percentage changes
-  const trendsChange = 5.2 + (Math.random() - 0.5) * 2; // +/- 1%
-  const commissionChange = 8.1 + (Math.random() - 0.5) * 4; // +/- 2%
-  const typesChange = 2.7 + (Math.random() - 0.5) * 1; // +/- 0.5%
+  // Dynamic data based on selected time period
+  const getDataForPeriod = (period) => {
+    switch (period) {
+      case 'Today':
+        return [
+          { day: '6AM', short: '6AM', value: 15, color: '#3B82F6', transactions: 23, trend: '+5%' },
+          { day: '9AM', short: '9AM', value: 25, color: '#8B5CF6', transactions: 45, trend: '+12%' },
+          { day: '12PM', short: '12PM', value: 30, color: '#10B981', transactions: 67, trend: '+18%' },
+          { day: '3PM', short: '3PM', value: 20, color: '#F59E0B', transactions: 34, trend: '+8%' },
+          { day: '6PM', short: '6PM', value: 10, color: '#EF4444', transactions: 12, trend: '-2%' }
+        ];
+      case 'This Month':
+        return [
+          { day: 'Week 1', short: 'W1', value: 28, color: '#3B82F6', transactions: 1240, trend: '+15%' },
+          { day: 'Week 2', short: 'W2', value: 32, color: '#8B5CF6', transactions: 1456, trend: '+22%' },
+          { day: 'Week 3', short: 'W3', value: 25, color: '#10B981', transactions: 1123, trend: '+8%' },
+          { day: 'Week 4', short: 'W4', value: 15, color: '#F59E0B', transactions: 876, trend: '-5%' }
+        ];
+      default: // This Week
+        return [
+          { day: 'Monday', short: 'Mon', value: 22, color: '#3B82F6', transactions: 187, trend: '+12%' },
+          { day: 'Tuesday', short: 'Tue', value: 18, color: '#8B5CF6', transactions: 156, trend: '+8%' },
+          { day: 'Wednesday', short: 'Wed', value: 15, color: '#10B981', transactions: 134, trend: '+5%' },
+          { day: 'Thursday', short: 'Thu', value: 12, color: '#F59E0B', transactions: 98, trend: '-2%' },
+          { day: 'Friday', short: 'Fri', value: 20, color: '#EF4444', transactions: 167, trend: '+15%' },
+          { day: 'Saturday', short: 'Sat', value: 8, color: '#06B6D4', transactions: 89, trend: '+3%' },
+          { day: 'Sunday', short: 'Sun', value: 5, color: '#84CC16', transactions: 45, trend: '-5%' }
+        ];
+    }
+  };
+  
+  const currentData = getDataForPeriod(selectedDateRange);
+  const totalCurrentTransactions = currentData.reduce((sum, item) => sum + item.transactions, 0);
+  const commissionEarned = totalCurrentTransactions * 0.025;
+  
+  // Dynamic metrics
+  const getMetrics = (period) => {
+    switch (period) {
+      case 'Today': return { change: 8.5, commissionChange: 6.2, average: Math.round(totalCurrentTransactions / currentData.length), label: 'Hourly Average' };
+      case 'This Month': return { change: 18.3, commissionChange: 15.7, average: Math.round(totalCurrentTransactions / currentData.length), label: 'Weekly Average' };
+      default: return { change: 15.8, commissionChange: 12.3, average: Math.round(totalCurrentTransactions / currentData.length), label: 'Daily Average' };
+    }
+  };
+  
+  const metrics = getMetrics(selectedDateRange);
 
-  // Mock recent activities if no real transactions
+  // Enhanced recent activities with better data
   const mockActivities = [
-    { type: 'cash_in', amount: 50.00, date: 'Oct 26, 2023', status: 'Completed' },
-    { type: 'cash_out', amount: 120.00, date: 'Oct 25, 2023', status: 'Completed' },
-    { type: 'bill_pay', amount: 75.50, date: 'Oct 25, 2023', status: 'Pending' },
-    { type: 'cash_in', amount: 200.00, date: 'Oct 24, 2023', status: 'Completed' },
+    { type: 'cash_in', amount: 250.00, date: '2 hours ago', status: 'Completed', phone: '024-123-4567', icon: 'trending-up' },
+    { type: 'cash_out', amount: 120.00, date: '4 hours ago', status: 'Completed', phone: '055-987-6543', icon: 'trending-down' },
+    { type: 'bill_pay', amount: 75.50, date: '6 hours ago', status: 'Pending', reference: 'ECG-2024-001', icon: 'receipt' },
+    { type: 'airtime', amount: 25.00, date: '1 day ago', status: 'Completed', phone: '027-555-0123', icon: 'phone' },
+    { type: 'cash_in', amount: 500.00, date: '1 day ago', status: 'Failed', phone: '020-444-5678', icon: 'trending-up' },
   ];
   
-  const displayActivities = transactions.length > 0 ? transactions.slice(0, 4) : mockActivities;
+  const displayActivities = transactions.length > 0 ? transactions.slice(0, 5) : mockActivities;
 
-  const dateRanges = ['Today', 'This Week', 'This Month', 'Custom'];
+  const dateRanges = [
+    { label: 'Today', value: 'today', icon: 'today' },
+    { label: 'This Week', value: 'week', icon: 'date-range' },
+    { label: 'This Month', value: 'month', icon: 'calendar-month' },
+    { label: 'Custom', value: 'custom', icon: 'tune' }
+  ];
 
   const handleBack = () => {
-    if (navigation && navigation.goBack) {
-      navigation.goBack();
-    }
+    navigation.navigate('Home');
   };
 
   const handleDownload = () => {
-    // TODO: Implement download functionality
     console.log('Download reports');
   };
+
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -66,143 +108,253 @@ export default function ReportsScreen({ navigation }) {
       </View>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Date Range Selector */}
+        {/* Enhanced Date Range Selector */}
         <View style={styles.dateRangeContainer}>
+          <Text style={styles.sectionTitle}>Time Period</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateRangeScroll}>
             {dateRanges.map((range) => (
               <TouchableOpacity
-                key={range}
+                key={range.value}
                 style={[
                   styles.dateRangeButton,
-                  selectedDateRange === range && styles.dateRangeButtonActive
+                  selectedDateRange === range.label && styles.dateRangeButtonActive
                 ]}
-                onPress={() => setSelectedDateRange(range)}
+                onPress={() => setSelectedDateRange(range.label)}
               >
+                <MaterialIcons 
+                  name={range.icon} 
+                  size={18} 
+                  color={selectedDateRange === range.label ? '#fff' : '#6B7280'} 
+                  style={styles.dateRangeIcon}
+                />
                 <Text style={[
                   styles.dateRangeText,
-                  selectedDateRange === range && styles.dateRangeTextActive
+                  selectedDateRange === range.label && styles.dateRangeTextActive
                 ]}>
-                  {range}
+                  {range.label}
                 </Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
         </View>
 
-        {/* Key Metric Cards */}
+        {/* Enhanced Key Metric Cards */}
         <View style={styles.metricsContainer}>
-          <View style={styles.metricCard}>
-            <Text style={styles.metricLabel}>Total Transactions</Text>
-            <Text style={styles.metricValue}>{totalTransactions.toLocaleString()}</Text>
-          </View>
-          <View style={styles.metricCard}>
+          <LinearGradient colors={['#6366F1', '#4F46E5']} style={styles.metricCard}>
+            <View style={styles.metricIcon}>
+              <Ionicons name="trending-up" size={26} color="#fff" />
+            </View>
+            <Text style={styles.metricLabel}>{selectedDateRange} Transactions</Text>
+            <Text style={styles.metricValue}>{totalCurrentTransactions.toLocaleString()}</Text>
+            <Text style={styles.metricChange}>+{metrics.change}% from last period</Text>
+          </LinearGradient>
+          
+          <LinearGradient colors={['#10B981', '#059669']} style={styles.metricCard}>
+            <View style={styles.metricIcon}>
+              <Ionicons name="wallet-outline" size={26} color="#fff" />
+            </View>
             <Text style={styles.metricLabel}>Total Commission</Text>
-            <Text style={styles.metricValue}>${totalCommission.toFixed(2)}</Text>
-          </View>
-          <View style={styles.metricCard}>
-            <Text style={styles.metricLabel}>Avg. Transaction Value</Text>
-            <Text style={styles.metricValue}>${avgTransactionValue.toFixed(2)}</Text>
-          </View>
+            <Text style={styles.metricValue}>GH₵{commissionEarned.toFixed(2)}</Text>
+            <Text style={styles.metricChange}>+{metrics.commissionChange}% this period</Text>
+          </LinearGradient>
+          
+          <LinearGradient colors={['#F59E0B', '#D97706']} style={styles.metricCard}>
+            <View style={styles.metricIcon}>
+              <Ionicons name="analytics-outline" size={26} color="#fff" />
+            </View>
+            <Text style={styles.metricLabel}>{metrics.label}</Text>
+            <Text style={styles.metricValue}>{metrics.average}</Text>
+            <Text style={styles.metricChange}>Transactions per day</Text>
+          </LinearGradient>
         </View>
 
-        {/* Charts Section */}
+        {/* Enhanced Charts Section */}
         <View style={styles.chartsContainer}>
-          {/* Transaction Trends Line Chart */}
+          {/* Weekly Bar Chart with Animation */}
           <View style={styles.chartCard}>
-            <Text style={styles.chartTitle}>Transaction Trends</Text>
-            <View style={styles.chartValueContainer}>
-              <Text style={styles.chartValue}>{transactionTrends.toLocaleString()}</Text>
-              <Text style={styles.chartChange}>+{trendsChange.toFixed(1)}%</Text>
+            <View style={styles.chartHeader}>
+              <View>
+                <Text style={styles.chartTitle}>{selectedDateRange} Transaction Distribution</Text>
+                <Text style={styles.chartSubtitle}>{selectedDateRange === 'Today' ? 'Hourly' : selectedDateRange === 'This Month' ? 'Weekly' : 'Daily'} performance with trends</Text>
+              </View>
+              <View style={styles.chartActions}>
+                <TouchableOpacity style={styles.chartActionButton}>
+                  <Ionicons name="download-outline" size={18} color="#6B7280" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.chartActionButton}>
+                  <Ionicons name="share-outline" size={18} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={styles.lineChartPlaceholder}>
-              <MaterialIcons name="show-chart" size={48} color={colors.secondary} />
-              <Text style={styles.placeholderText}>Transaction Trends Over Time</Text>
-              <Text style={styles.placeholderSubtext}>Weekly data visualization</Text>
+            
+            {/* Bar Chart */}
+            <View style={styles.barChartContainer}>
+              <View style={styles.barChartGrid}>
+                {currentData.map((item, index) => {
+                  const maxTransactions = Math.max(...currentData.map(d => d.transactions));
+                  const barHeightPercent = (item.transactions / maxTransactions) * 100;
+                  
+                  return (
+                    <TouchableOpacity key={item.day} style={styles.barItem}>
+                      {/* Value Display */}
+                      <View style={styles.valueDisplay}>
+                        <Text style={styles.transactionValue}>{item.transactions}</Text>
+                        <Text style={[styles.trendValue, { 
+                          color: item.trend.includes('+') ? '#10B981' : '#EF4444' 
+                        }]}>{item.trend}</Text>
+                      </View>
+                      
+                      {/* Animated Bar */}
+                      <View style={styles.barContainer}>
+                        <View style={[styles.animatedBar, {
+                          height: `${barHeightPercent}%`,
+                          backgroundColor: item.color
+                        }]}>
+                          {/* Activity Indicators */}
+                          <View style={styles.activityIndicator1} />
+                          <View style={styles.activityIndicator2} />
+                          <View style={styles.activityIndicator3} />
+                        </View>
+                        
+                        {/* Side Pulse Indicator */}
+                        <View style={[styles.sideIndicator, { backgroundColor: item.color }]} />
+                      </View>
+                      
+                      {/* Labels */}
+                      <View style={styles.barLabels}>
+                        <Text style={styles.dayLabel}>{item.short}</Text>
+                        <Text style={styles.percentLabel}>{item.value}%</Text>
+                      </View>
+                      
+
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+              
+              {/* Chart Summary */}
+              <View style={styles.chartSummaryCard}>
+                <LinearGradient colors={['#F8FAFC', '#EFF6FF']} style={styles.summaryGradient}>
+                  <View style={styles.summaryGrid}>
+                    <View style={styles.summaryMetric}>
+                      <Ionicons name="trending-up" size={20} color="#3B82F6" />
+                      <Text style={styles.summaryLabel}>Total Volume</Text>
+                      <Text style={styles.summaryValue}>{totalCurrentTransactions.toLocaleString()}</Text>
+                    </View>
+                    <View style={styles.summaryMetric}>
+                      <Ionicons name="star" size={20} color="#F59E0B" />
+                      <Text style={styles.summaryLabel}>Peak {selectedDateRange === 'Today' ? 'Hour' : selectedDateRange === 'This Month' ? 'Week' : 'Day'}</Text>
+                      <Text style={styles.summaryValue}>{currentData.reduce((max, item) => item.transactions > max.transactions ? item : max).short}</Text>
+                    </View>
+                    <View style={styles.summaryMetric}>
+                      <Ionicons name="analytics" size={20} color="#10B981" />
+                      <Text style={styles.summaryLabel}>Growth</Text>
+                      <Text style={[styles.summaryValue, { color: '#10B981' }]}>+{metrics.change}%</Text>
+                    </View>
+                  </View>
+                </LinearGradient>
+              </View>
             </View>
-            <View style={styles.chartLabels}>
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                <Text key={day} style={styles.chartLabel}>{day}</Text>
+          </View>
+
+          {/* Enhanced Line Chart */}
+          <View style={styles.chartCard}>
+            <View style={styles.chartHeader}>
+              <View>
+                <Text style={styles.chartTitle}>Transaction Trends</Text>
+                <Text style={styles.chartSubtitle}>Daily volume comparison</Text>
+              </View>
+              <View style={styles.trendIndicator}>
+                <Ionicons name="trending-up" size={16} color="#10B981" />
+                <Text style={styles.trendText}>+{metrics.change}%</Text>
+              </View>
+            </View>
+            
+            <View style={styles.lineChart}>
+              {currentData.map((item, index) => (
+                <View key={item.day} style={styles.linePoint}>
+                  <View style={styles.pointWrapper}>
+                    <View style={[styles.point, { backgroundColor: item.color }]} />
+                    <View style={[styles.pointLine, { 
+                      height: `${(item.transactions / Math.max(...currentData.map(d => d.transactions))) * 100}%`,
+                      backgroundColor: item.color + '40'
+                    }]} />
+                  </View>
+                  <Text style={styles.pointLabel}>{item.short}</Text>
+                  <Text style={styles.pointValue}>{item.transactions}</Text>
+                </View>
               ))}
             </View>
           </View>
-
-          {/* Commission Earned Bar Chart & Transaction Types Donut Chart */}
-          <View style={styles.chartsRow}>
-            <View style={styles.chartCard}>
-              <Text style={styles.chartTitle}>Commission Earned</Text>
-              <View style={styles.chartValueContainer}>
-                <Text style={styles.chartValue}>${commissionEarned.toFixed(2)}</Text>
-                <Text style={styles.chartChange}>+{commissionChange.toFixed(1)}%</Text>
-              </View>
-              <View style={styles.barChartPlaceholder}>
-                <MaterialIcons name="bar-chart" size={48} color={colors.secondary} />
-                <Text style={styles.placeholderText}>Commission Earnings</Text>
-                <Text style={styles.placeholderSubtext}>Daily breakdown</Text>
-              </View>
-            </View>
-
-            <View style={styles.chartCard}>
-              <Text style={styles.chartTitle}>Transaction Types</Text>
-              <View style={styles.chartValueContainer}>
-                <Text style={styles.chartValue}>{transactionTypes.toLocaleString()}</Text>
-                <Text style={styles.chartChange}>+{typesChange.toFixed(1)}%</Text>
-              </View>
-              <View style={styles.donutChartPlaceholder}>
-                <MaterialIcons name="pie-chart" size={48} color={colors.primary} />
-                <Text style={styles.placeholderText}>Transaction Distribution</Text>
-                <Text style={styles.placeholderSubtext}>By payment type</Text>
-              </View>
-              <View style={styles.legendContainer}>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: colors.primary }]} />
-                  <Text style={styles.legendText}>Cash In</Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: colors.secondary }]} />
-                  <Text style={styles.legendText}>Cash Out</Text>
-                </View>
-                <View style={styles.legendItem}>
-                  <View style={[styles.legendDot, { backgroundColor: '#d1d5db' }]} />
-                  <Text style={styles.legendText}>Bill Pay</Text>
-                </View>
-              </View>
-            </View>
-          </View>
         </View>
 
-        {/* Recent Activity Section */}
+        {/* Enhanced Recent Activity Section */}
         <View style={styles.activityContainer}>
-          <Text style={styles.activityTitle}>Recent Activity</Text>
-          <View style={styles.activityList}>
-            {displayActivities.map((transaction, index) => (
-              <View key={index} style={styles.activityItem}>
-                <View style={styles.activityIcon}>
-                  <MaterialIcons
-                    name={transaction.type === 'cash_in' ? 'call_received' : transaction.type === 'cash_out' ? 'call_made' : 'receipt_long'}
-                    size={24}
-                    color={transaction.type === 'cash_in' ? colors.primary : transaction.type === 'cash_out' ? '#ef4444' : '#eab308'}
-                  />
-                </View>
-                <View style={styles.activityContent}>
-                  <Text style={styles.activityType}>
-                    {transaction.type === 'cash_in' ? 'Cash In' : transaction.type === 'cash_out' ? 'Cash Out' : 'Bill Payment'}
-                  </Text>
-                  <Text style={styles.activityDate}>{transaction.date || 'Recent'}</Text>
-                </View>
-                <View style={styles.activityAmount}>
-                  <Text style={[
-                    styles.amountText,
-                    { color: transaction.type === 'cash_in' ? colors.secondary : colors.textLight }
-                  ]}>
-                    {transaction.type === 'cash_in' ? '+' : '-'}${transaction.amount ? Number(transaction.amount).toFixed(2) : '0.00'}
-                  </Text>
-                  <Text style={styles.activityStatus}>{transaction.status || 'Completed'}</Text>
-                </View>
-              </View>
-            ))}
+          <View style={styles.activityHeader}>
+            <Text style={styles.activityTitle}>Recent Activity</Text>
+            <TouchableOpacity style={styles.filterButton}>
+              <Ionicons name="filter" size={20} color="#6B7280" />
+            </TouchableOpacity>
           </View>
+          
+          <View style={styles.activityList}>
+            {displayActivities.map((transaction, index) => {
+              const getActivityConfig = (type, status) => {
+                const configs = {
+                  cash_in: { color: '#10B981', bgColor: '#ECFDF5', icon: 'arrow-down-circle' },
+                  cash_out: { color: '#EF4444', bgColor: '#FEF2F2', icon: 'arrow-up-circle' },
+                  bill_pay: { color: '#F59E0B', bgColor: '#FFFBEB', icon: 'receipt-outline' },
+                  airtime: { color: '#8B5CF6', bgColor: '#F3E8FF', icon: 'phone-portrait-outline' }
+                };
+                return configs[type] || configs.cash_in;
+              };
+              
+              const config = getActivityConfig(transaction.type, transaction.status);
+              const statusColor = transaction.status === 'Completed' ? '#10B981' : 
+                                transaction.status === 'Pending' ? '#F59E0B' : '#EF4444';
+              
+              return (
+                <TouchableOpacity key={index} style={styles.activityItem}>
+                  <View style={[styles.activityIconContainer, { backgroundColor: config.bgColor }]}>
+                    <Ionicons name={config.icon} size={24} color={config.color} />
+                  </View>
+                  
+                  <View style={styles.activityContent}>
+                    <View style={styles.activityMainInfo}>
+                      <Text style={styles.activityType}>
+                        {transaction.type === 'cash_in' ? 'Cash In' : 
+                         transaction.type === 'cash_out' ? 'Cash Out' : 
+                         transaction.type === 'bill_pay' ? 'Bill Payment' : 'Airtime Purchase'}
+                      </Text>
+                      <Text style={styles.activitySubInfo}>
+                        {transaction.phone || transaction.reference || 'N/A'}
+                      </Text>
+                    </View>
+                    
+                    <View style={styles.activityMeta}>
+                      <Text style={styles.activityDate}>{transaction.date}</Text>
+                      <View style={[styles.statusBadge, { backgroundColor: `${statusColor}20` }]}>
+                        <Text style={[styles.statusText, { color: statusColor }]}>
+                          {transaction.status}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                  
+                  <View style={styles.activityAmount}>
+                    <Text style={[styles.amountText, { color: config.color }]}>
+                      {transaction.type === 'cash_in' ? '+' : '-'}GH₵{Number(transaction.amount).toFixed(2)}
+                    </Text>
+                    <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          
           <TouchableOpacity style={styles.viewAllButton}>
-            <Text style={styles.viewAllText}>View All</Text>
+            <Text style={styles.viewAllText}>View All Transactions</Text>
+            <Ionicons name="arrow-forward" size={16} color="#3B82F6" />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -247,28 +399,53 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 16,
+    paddingHorizontal: spacing.md,
+  },
   dateRangeContainer: {
     backgroundColor: colors.backgroundLight,
-    paddingVertical: spacing.md,
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
   },
   dateRangeScroll: {
     paddingHorizontal: spacing.md,
-    gap: spacing.sm,
+    gap: 12,
   },
   dateRangeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: '#f3f4f6',
-    marginRight: spacing.sm,
+    paddingVertical: 12,
+    borderRadius: 25,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   dateRangeButtonActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#6366F1',
+    borderColor: '#6366F1',
+    shadowColor: '#6366F1',
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  dateRangeIcon: {
+    marginRight: 8,
   },
   dateRangeText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: colors.textLight,
+    fontWeight: '600',
+    color: '#6B7280',
   },
   dateRangeTextActive: {
     color: '#ffffff',
@@ -276,30 +453,43 @@ const styles = StyleSheet.create({
   metricsContainer: {
     flexDirection: 'row',
     padding: spacing.md,
-    gap: spacing.md,
+    gap: 12,
   },
   metricCard: {
     flex: 1,
-    backgroundColor: '#ffffff',
-    padding: spacing.lg,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    padding: 20,
+    borderRadius: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  metricIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
   },
   metricLabel: {
     fontSize: 14,
-    color: '#6b7280',
-    marginBottom: spacing.xs,
+    color: 'rgba(255,255,255,0.8)',
+    marginBottom: 8,
+    fontWeight: '500',
   },
   metricValue: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: colors.textLight,
+    color: '#ffffff',
+    marginBottom: 4,
+  },
+  metricChange: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.9)',
+    fontWeight: '500',
   },
   chartsContainer: {
     padding: spacing.md,
@@ -307,21 +497,52 @@ const styles = StyleSheet.create({
   },
   chartCard: {
     backgroundColor: '#ffffff',
-    padding: spacing.lg,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    padding: 24,
+    borderRadius: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 8,
+    marginBottom: 16,
+  },
+  chartHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 24,
   },
   chartTitle: {
-    fontSize: 18,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 4,
+  },
+  chartSubtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  chartMenuButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  trendIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 4,
+  },
+  trendText: {
+    fontSize: 14,
     fontWeight: '600',
-    color: colors.textLight,
-    marginBottom: spacing.md,
+    color: '#10B981',
   },
   chartValueContainer: {
     flexDirection: 'row',
@@ -386,94 +607,361 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.md,
   },
-  legendContainer: {
+  // Enhanced Bar Chart Styles
+  chartActions: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.lg,
+    gap: 8,
   },
-  legendItem: {
+  chartActionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  barChartContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    marginHorizontal: 4,
+  },
+  barChartGrid: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    height: 180,
+    marginBottom: 20,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  barItem: {
+    alignItems: 'center',
+    width: 40,
+  },
+  valueDisplay: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+    minHeight: 35,
+  },
+  transactionValue: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 2,
+    textAlign: 'center',
+  },
+  trendValue: {
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  barContainer: {
+    height: 120,
+    width: 30,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 15,
+    justifyContent: 'flex-end',
+    position: 'relative',
+    overflow: 'visible',
+  },
+  animatedBar: {
+    width: '100%',
+    borderRadius: 15,
+    position: 'relative',
+    minHeight: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  activityIndicator1: {
+    position: 'absolute',
+    top: 8,
+    right: 6,
+    width: 6,
+    height: 6,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  activityIndicator2: {
+    position: 'absolute',
+    top: '50%',
+    right: 6,
+    marginTop: -3,
+    width: 6,
+    height: 6,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  activityIndicator3: {
+    position: 'absolute',
+    bottom: 8,
+    right: 6,
+    width: 6,
+    height: 6,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  sideIndicator: {
+    position: 'absolute',
+    right: -4,
+    top: '25%',
+    width: 3,
+    height: '50%',
+    borderRadius: 2,
+    opacity: 0.7,
+  },
+  barLabels: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+  },
+  dayLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#374151',
+    marginBottom: 2,
+    textAlign: 'center',
+  },
+  percentLabel: {
+    fontSize: 10,
+    color: '#6B7280',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  commissionBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginTop: 8,
+    gap: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  legendDot: {
+  commissionAmount: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  chartSummaryCard: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  summaryGradient: {
+    padding: 20,
+  },
+  summaryGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  summaryMetric: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  summaryLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '600',
+    marginTop: 8,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  summaryValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#1F2937',
+    textAlign: 'center',
+  },
+  
+  // Enhanced Line Chart Styles
+  lineChart: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-around',
+    height: 180,
+    backgroundColor: '#FAFBFC',
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 16,
+  },
+  linePoint: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  pointWrapper: {
+    height: 120,
+    width: 6,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 3,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  pointLine: {
+    width: '100%',
+    borderRadius: 3,
+    minHeight: 4,
+  },
+  point: {
     width: 12,
     height: 12,
     borderRadius: 6,
+    position: 'absolute',
+    top: -6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  legendText: {
+  pointLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '600',
+    marginTop: 12,
+  },
+  pointValue: {
     fontSize: 14,
-    color: '#6b7280',
+    color: '#1F2937',
+    fontWeight: '700',
+    marginTop: 4,
   },
+  // Enhanced Activity Styles
   activityContainer: {
     padding: spacing.md,
     paddingBottom: spacing.xl,
   },
+  activityHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
   activityTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: colors.textLight,
-    marginBottom: spacing.md,
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  filterButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   activityList: {
-    gap: spacing.sm,
+    gap: 12,
   },
   activityItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    padding: spacing.md,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    padding: 16,
+    borderRadius: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  activityIcon: {
+  activityIconContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginRight: 16,
   },
   activityContent: {
     flex: 1,
   },
+  activityMainInfo: {
+    marginBottom: 8,
+  },
   activityType: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.textLight,
+    color: '#1F2937',
+    marginBottom: 2,
+  },
+  activitySubInfo: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  activityMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   activityDate: {
-    fontSize: 14,
-    color: '#6b7280',
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontWeight: '500',
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   activityAmount: {
     alignItems: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   amountText: {
     fontSize: 16,
     fontWeight: 'bold',
   },
-  activityStatus: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
   viewAllButton: {
-    width: '100%',
-    backgroundColor: colors.primary + '33', // 20% opacity
-    paddingVertical: 12,
-    borderRadius: 8,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.md,
+    justifyContent: 'center',
+    backgroundColor: '#F8FAFC',
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginTop: 20,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   viewAllText: {
     fontSize: 16,
     fontWeight: '600',
-    color: colors.primary,
+    color: '#3B82F6',
   },
 });

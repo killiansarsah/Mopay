@@ -54,7 +54,7 @@ const statusColors = {
   Pending: '#f59e0b'
 };
 
-export default function HistoryScreen() {
+export default function HistoryScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDateRange, setSelectedDateRange] = useState('all');
   const [selectedTransactionType, setSelectedTransactionType] = useState('all');
@@ -186,7 +186,9 @@ export default function HistoryScreen() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" backgroundColor="#f5f7f8" />
       <View style={styles.header}>
-        <MaterialIcons name="arrow-back" size={24} color="#000" />
+        <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+          <MaterialIcons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Transaction History</Text>
         <View style={styles.headerSpacer} />
       </View>
