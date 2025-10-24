@@ -51,7 +51,7 @@ const statusColors = {
   Pending: '#f59e0b'
 };
 
-export default function HistoryScreen() {
+export default function TransactionHistoryScreen() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const formatDate = (dateString) => {
@@ -98,12 +98,14 @@ export default function HistoryScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
         <MaterialIcons name="arrow-back" size={24} color="#000" />
         <Text style={styles.headerTitle}>Transaction History</Text>
         <View style={styles.headerSpacer} />
       </View>
 
+      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <View style={styles.searchIcon}>
@@ -119,6 +121,7 @@ export default function HistoryScreen() {
         </View>
       </View>
 
+      {/* Filter Buttons */}
       <View style={styles.filterContainer}>
         <TouchableOpacity style={styles.filterButtonActive}>
           <Text style={styles.filterTextActive}>Date Range</Text>
@@ -130,6 +133,7 @@ export default function HistoryScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Transaction List */}
       <FlatList
         data={mockTransactions}
         keyExtractor={(item) => item.id}
