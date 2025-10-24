@@ -12,28 +12,15 @@ export function AppProvider({ children }) {
   useEffect(() => {
     (async () => {
       const p = await AsyncStorage.getItem('profile');
-      console.log('Profile before setting:', p);
-      if (p) {
-        setProfile(JSON.parse(p));
-        console.log('Profile fetched from AsyncStorage:', JSON.parse(p));
-      } else {
+      if (p) setProfile(JSON.parse(p));
+      else {
         const data = await mockApi.getProfile();
         setProfile(data);
-        console.log('Profile fetched from API:', data);
-        console.log('Setting profile:', data);
-        console.log('Profile type:', typeof data);
         AsyncStorage.setItem('profile', JSON.stringify(data));
       }
 
       const tx = await mockApi.getTransactions();
       setTransactions(tx);
-      console.log('Transactions fetched from API:', tx);
-      console.log('Setting transactions:', tx);
-      console.log('Transactions type:', typeof tx);
-      console.log('Transactions structure:', tx);
-
-      // Log transactions to verify data
-      console.log('Transactions:', tx);
     })();
   }, []);
 

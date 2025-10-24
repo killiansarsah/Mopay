@@ -21,16 +21,16 @@ const sampleTransactions = Array.from({ length: 20 }).map((_, i) => ({
 export default {
   async getProfile() {
     await wait(200);
-    return { ...profile };
+    return profile;
   },
   async getTransactions() {
     await wait(300);
-    return sampleTransactions.map(tx => ({ ...tx }));
+    return sampleTransactions;
   },
   async sendTransaction(tx) {
     await wait(400);
     const newTx = { id: `tx_${Date.now()}`, ...tx, date: new Date().toISOString(), status: 'Success' };
     sampleTransactions.unshift(newTx);
-    return { ...newTx };
+    return newTx;
   },
 };
