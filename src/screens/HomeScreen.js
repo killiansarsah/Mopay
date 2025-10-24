@@ -6,7 +6,9 @@ import { MaterialIcons } from '@expo/vector-icons';
 import OptimizedActionGrid from '../components/OptimizedActionGrid';
 import EnhancedInputField from '../components/EnhancedInputField';
 import TransactionCard from '../components/TransactionCard';
+import UnifiedDashboard from '../components/UnifiedDashboard';
 import { AppContext } from '../state/AppContext';
+import { useMultiNetwork } from '../state/MultiNetworkContext';
 import { spacing, colors } from '../theme/tokens';
 
 export default function HomeScreen() {
@@ -82,8 +84,9 @@ export default function HomeScreen() {
 
   const handleMenuPress = () => {
     const menuOptions = [
-      { text: 'Settings', onPress: () => Alert.alert('Settings', 'App configuration options') },
-      { text: 'Support', onPress: () => Alert.alert('Support', 'Contact customer support') },
+      { text: 'Profile', onPress: () => Alert.alert('Profile', 'View and edit your profile information') },
+      { text: 'Account Settings', onPress: () => Alert.alert('Account Settings', 'Manage your account preferences') },
+      { text: 'Help & Support', onPress: () => Alert.alert('Help & Support', 'Get help and contact support') },
       { text: 'Logout', style: 'destructive', onPress: () => Alert.alert('Logout', 'Are you sure you want to logout?', [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Logout', style: 'destructive', onPress: () => Alert.alert('Logged Out', 'You have been logged out successfully') }
@@ -190,6 +193,11 @@ export default function HomeScreen() {
               <TransactionCard key={tx.id} tx={tx} />
             ))}
           </View>
+        </View>
+
+        {/* Multi-Network Dashboard */}
+        <View style={{ marginTop: spacing.lg }}>
+          <UnifiedDashboard />
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -3,10 +3,13 @@ import { View, Text, Switch, StyleSheet, Image, TouchableOpacity, ScrollView } f
 import { AppContext } from '../state/AppContext';
 import { spacing, colors } from '../theme/tokens';
 import { MaterialIcons } from '@expo/vector-icons';
+import SimManager from '../components/SimManager';
+import SecurityManager from '../components/SecurityManager';
 
 export default function ProfileScreen() {
   const { profile, theme, setTheme } = useContext(AppContext);
   const [pushEnabled, setPushEnabled] = useState(true);
+  const [activeSim, setActiveSim] = useState(1);
 
   if (!profile) return null;
 
@@ -26,42 +29,70 @@ export default function ProfileScreen() {
             source={{ uri: profile.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCW7oZEzP-CnYaprXowZGNDTPWUJ02frcKQHuwv3Zuga2PqLv7hxx5PvBlLKGtAlKDXlMStaRMS5rpoHxDTTs0SpIRAuGoORRLlVJPflFO1mag46ZR6v6qf9iMliP8vLYdujHhgP6zPnBI6sZMg-S7-NCskUCQsSABpgsTSVnRuYoOuY6wmQ-pHChJsUAxhzsOi8T7qQexFuynoUMbgQdhkj2YbAAreYLALgLu7sRKV24wBhBVq9NW_WxjVYW4e2XTjN5ByCyHc7Jw' }}
             style={styles.avatar}
           />
-          <Text style={styles.name}>{profile.name || 'John Doe'}</Text>
-          <Text style={styles.agentId}>Agent ID: {profile.id || '12345678'}</Text>
+          <Text style={styles.name}>{profile.name || 'Kwame Asante'}</Text>
+          <Text style={styles.position}>Mobile Money Agent</Text>
+          <Text style={styles.agentId}>Agent ID: {profile.id || 'AGT001'}</Text>
         </View>
 
-        {/* Personal Information */}
+        {/* SIM Management */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Active SIM</Text>
+          <View style={styles.card}>
+            <View style={styles.simToggleContainer}>
+              <TouchableOpacity 
+                style={[styles.simToggle, activeSim === 1 && styles.simToggleActive]} 
+                onPress={() => setActiveSim(1)}
+              >
+                <MaterialIcons name="sim-card" size={20} color={activeSim === 1 ? '#fff' : '#6b7280'} />
+                <Text style={[styles.simToggleText, activeSim === 1 && styles.simToggleTextActive]}>SIM 1</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.simToggle, activeSim === 2 && styles.simToggleActive]} 
+                onPress={() => setActiveSim(2)}
+              >
+                <MaterialIcons name="sim-card" size={20} color={activeSim === 2 ? '#fff' : '#6b7280'} />
+                <Text style={[styles.simToggleText, activeSim === 2 && styles.simToggleTextActive]}>SIM 2</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.infoRow}>
+              <MaterialIcons name="network-cell" size={22} color={theme === 'dark' ? '#9ca3af' : '#6b7280'} />
+              <View style={styles.infoCol}>
+                <Text style={styles.infoLabel}>Network</Text>
+                <Text style={styles.infoValue}>{activeSim === 1 ? 'MTN Mobile Money' : 'Vodafone Cash'}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Personal Info */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Personal Information</Text>
           <View style={styles.card}>
             <View style={styles.infoRow}>
-              <MaterialIcons name="person" size={22} color={theme === 'dark' ? '#9ca3af' : '#6b7280'} />
-              <View style={styles.infoCol}><Text style={styles.infoLabel}>Full Name</Text><Text style={styles.infoValue}>{profile.name}</Text></View>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.infoRow}>
               <MaterialIcons name="phone" size={22} color={theme === 'dark' ? '#9ca3af' : '#6b7280'} />
-              <View style={styles.infoCol}><Text style={styles.infoLabel}>Phone Number</Text><Text style={styles.infoValue}>{profile.phone}</Text></View>
+              <View style={styles.infoCol}><Text style={styles.infoLabel}>Phone</Text><Text style={styles.infoValue}>{profile.phone}</Text></View>
             </View>
             <View style={styles.divider} />
             <View style={styles.infoRow}>
               <MaterialIcons name="email" size={22} color={theme === 'dark' ? '#9ca3af' : '#6b7280'} />
-              <View style={styles.infoCol}><Text style={styles.infoLabel}>Email Address</Text><Text style={styles.infoValue}>{profile.email || 'john.doe@mopay.com'}</Text></View>
+              <View style={styles.infoCol}><Text style={styles.infoLabel}>Email</Text><Text style={styles.infoValue}>{profile.email || 'kwame.asante@mopay.gh'}</Text></View>
+            </View>
+            <View style={styles.divider} />
+            <View style={styles.infoRow}>
+              <MaterialIcons name="location-on" size={22} color={theme === 'dark' ? '#9ca3af' : '#6b7280'} />
+              <View style={styles.infoCol}><Text style={styles.infoLabel}>Location</Text><Text style={styles.infoValue}>{profile.location || 'Accra, Ghana'}</Text></View>
             </View>
           </View>
-          <TouchableOpacity style={styles.editBtn}>
-            <MaterialIcons name="edit" size={20} color="#fff" />
-            <Text style={styles.editBtnText}>Edit Profile</Text>
-          </TouchableOpacity>
         </View>
 
-        {/* Preferences */}
+        {/* Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Preferences</Text>
+          <Text style={styles.sectionTitle}>Settings</Text>
           <View style={styles.card}>
             <View style={styles.prefRow}>
               <View style={styles.prefIcon}><MaterialIcons name="notifications" size={22} color={theme === 'dark' ? '#EAEAEA' : '#333'} /></View>
-              <Text style={styles.prefLabel}>Push Notifications</Text>
+              <Text style={styles.prefLabel}>Notifications</Text>
               <Switch value={pushEnabled} onValueChange={setPushEnabled} />
             </View>
             <View style={styles.divider} />
@@ -73,25 +104,43 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Account Actions */}
+        {/* Security */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account</Text>
+          <Text style={styles.sectionTitle}>Security</Text>
           <View style={styles.card}>
             <TouchableOpacity style={styles.actionRow}>
               <View style={styles.actionIcon}><MaterialIcons name="password" size={22} color={theme === 'dark' ? '#EAEAEA' : '#333'} /></View>
-              <Text style={styles.actionLabel}>Change Security PIN</Text>
+              <Text style={styles.actionLabel}>Change PIN</Text>
               <MaterialIcons name="chevron-right" size={22} color={theme === 'dark' ? '#9ca3af' : '#6b7280'} />
             </TouchableOpacity>
             <View style={styles.divider} />
             <TouchableOpacity style={styles.actionRow}>
-              <View style={styles.actionIcon}><MaterialIcons name="help" size={22} color={theme === 'dark' ? '#EAEAEA' : '#333'} /></View>
-              <Text style={styles.actionLabel}>Help & Support</Text>
+              <View style={styles.actionIcon}><MaterialIcons name="fingerprint" size={22} color={theme === 'dark' ? '#EAEAEA' : '#333'} /></View>
+              <Text style={styles.actionLabel}>Biometric Auth</Text>
               <MaterialIcons name="chevron-right" size={22} color={theme === 'dark' ? '#9ca3af' : '#6b7280'} />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Logout Button */}
+        {/* Support */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Support</Text>
+          <View style={styles.card}>
+            <TouchableOpacity style={styles.actionRow}>
+              <View style={styles.actionIcon}><MaterialIcons name="help" size={22} color={theme === 'dark' ? '#EAEAEA' : '#333'} /></View>
+              <Text style={styles.actionLabel}>Help Center</Text>
+              <MaterialIcons name="chevron-right" size={22} color={theme === 'dark' ? '#9ca3af' : '#6b7280'} />
+            </TouchableOpacity>
+            <View style={styles.divider} />
+            <TouchableOpacity style={styles.actionRow}>
+              <View style={styles.actionIcon}><MaterialIcons name="edit" size={22} color={theme === 'dark' ? '#EAEAEA' : '#333'} /></View>
+              <Text style={styles.actionLabel}>Edit Profile</Text>
+              <MaterialIcons name="chevron-right" size={22} color={theme === 'dark' ? '#9ca3af' : '#6b7280'} />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Logout */}
         <TouchableOpacity style={styles.logoutBtn}>
           <MaterialIcons name="logout" size={22} color={theme === 'dark' ? '#f87171' : '#dc2626'} />
           <Text style={styles.logoutBtnText}>Logout</Text>
@@ -140,10 +189,43 @@ const styles = StyleSheet.create({
     marginBottom: 2,
     textAlign: 'center',
   },
+  position: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#068cf9',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
   agentId: {
     color: '#6b7280',
-    fontSize: 15,
+    fontSize: 14,
     textAlign: 'center',
+    marginBottom: 12,
+  },
+  summary: {
+    fontSize: 16,
+    color: '#4b5563',
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: 16,
+  },
+  skillsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  skillTag: {
+    backgroundColor: '#e0f2fe',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#068cf9',
+  },
+  skillText: {
+    color: '#068cf9',
+    fontSize: 14,
+    fontWeight: '500',
   },
   section: {
     marginTop: 8,
@@ -245,5 +327,31 @@ const styles = StyleSheet.create({
     color: '#dc2626',
     fontWeight: '700',
     fontSize: 16,
+  },
+  simToggleContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 8,
+  },
+  simToggle: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#e5e7eb',
+    borderRadius: 10,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  simToggleActive: {
+    backgroundColor: '#007AFF',
+  },
+  simToggleText: {
+    color: '#6b7280',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  simToggleTextActive: {
+    color: '#fff',
   },
 });
