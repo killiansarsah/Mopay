@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { MaterialIcons } from '@expo/vector-icons';
+import FilterDropdown from '../components/FilterDropdown';
 
 const mockTransactions = [
   {
@@ -53,6 +56,81 @@ const statusColors = {
 
 export default function HistoryScreen() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDateRange, setSelectedDateRange] = useState('all');
+  const [selectedTransactionType, setSelectedTransactionType] = useState('all');
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Enhanced Date Range options (chronological order - most recent to oldest)
+  const dateRangeOptions = [
+    { label: 'All Time', value: 'all', icon: 'all-inclusive' },
+    { label: 'Last 7 days', value: '7days', icon: 'date-range' },
+    { label: 'Last 30 days', value: '30days', icon: 'date-range' },
+    { label: 'Last 3 months', value: '3months', icon: 'calendar-today' },
+    { label: 'Last 6 months', value: '6months', icon: 'calendar-today' },
+    { label: 'Last year', value: '1year', icon: 'calendar-view-year' },
+    { label: 'Custom date range', value: 'custom', icon: 'edit-calendar' },
+  ];
+
+  const transactionTypeOptions = [
+    { label: 'All Types', value: 'all' },
+    { label: 'Cash In', value: 'Cash In' },
+    { label: 'Cash Out', value: 'Cash Out' },
+    { label: 'Bill Payment', value: 'Bill Payment' },
+    { label: 'Airtime', value: 'Airtime' },
+  ];
+
+  // Filter transactions based on selected criteria
+  const filteredTransactions = useMemo(() => {
+    let filtered = mockTransactions;
+
+    // Search filter
+    if (searchQuery.trim()) {
+      filtered = filtered.filter(tx => 
+        tx.phone?.includes(searchQuery) ||
+        tx.transactionId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tx.type.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Transaction type filter
+    if (selectedTransactionType !== 'all') {
+      filtered = filtered.filter(tx => tx.type === selectedTransactionType);
+    }
+
+    // Date range filter
+    if (selectedDateRange !== 'all') {
+      const now = new Date();
+      const txDate = (dateStr) => new Date(dateStr);
+      
+      filtered = filtered.filter(tx => {
+        const date = txDate(tx.date);
+        switch (selectedDateRange) {
+          case '7days':
+            const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            return date >= sevenDaysAgo;
+          case '30days':
+            const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            return date >= thirtyDaysAgo;
+          case '3months':
+            const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+            return date >= threeMonthsAgo;
+          case '6months':
+            const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+            return date >= sixMonthsAgo;
+          case '1year':
+            const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+            return date >= oneYearAgo;
+          case 'custom':
+            // TODO: Implement custom date picker
+            return true;
+          default:
+            return true;
+        }
+      });
+    }
+
+    return filtered;
+  }, [searchQuery, selectedDateRange, selectedTransactionType]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -70,6 +148,14 @@ export default function HistoryScreen() {
     const sign = type === 'Cash In' ? '+' : '-';
     return `${sign} $${amount.toFixed(2)}`;
   };
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedDateRange('all');
+    setSelectedTransactionType('all');
+  };
+
+  const hasActiveFilters = selectedDateRange !== 'all' || selectedTransactionType !== 'all' || searchQuery.trim();
 
   const renderTransaction = ({ item }) => (
     <View style={styles.transactionItem}>
@@ -97,7 +183,8 @@ export default function HistoryScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar style="dark" backgroundColor="#f5f7f8" />
       <View style={styles.header}>
         <MaterialIcons name="arrow-back" size={24} color="#000" />
         <Text style={styles.headerTitle}>Transaction History</Text>
@@ -120,24 +207,58 @@ export default function HistoryScreen() {
       </View>
 
       <View style={styles.filterContainer}>
-        <TouchableOpacity style={styles.filterButtonActive}>
-          <Text style={styles.filterTextActive}>Date Range</Text>
-          <MaterialIcons name="expand-more" size={20} color="#068cf9" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.filterButton}>
-          <Text style={styles.filterText}>Transaction Type</Text>
-          <MaterialIcons name="expand-more" size={20} color="#000" />
-        </TouchableOpacity>
+        <FilterDropdown
+          label="Date Range"
+          options={dateRangeOptions}
+          selectedValue={selectedDateRange}
+          onSelect={setSelectedDateRange}
+          placeholder="Date Range"
+          isActive={selectedDateRange !== 'all'}
+        />
+        <FilterDropdown
+          label="Transaction Type"
+          options={transactionTypeOptions}
+          selectedValue={selectedTransactionType}
+          onSelect={setSelectedTransactionType}
+          placeholder="Transaction Type"
+          isActive={selectedTransactionType !== 'all'}
+        />
+        {hasActiveFilters && (
+          <TouchableOpacity style={styles.clearButton} onPress={clearFilters}>
+            <MaterialIcons name="clear" size={16} color="#ef4444" />
+            <Text style={styles.clearButtonText}>Clear</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
-      <FlatList
-        data={mockTransactions}
-        keyExtractor={(item) => item.id}
-        renderItem={renderTransaction}
-        style={styles.transactionList}
-        showsVerticalScrollIndicator={false}
-      />
-    </View>
+      {filteredTransactions.length === 0 ? (
+        <View style={styles.emptyState}>
+          <MaterialIcons name="history" size={64} color="#9ca3af" />
+          <Text style={styles.emptyTitle}>No Transactions Found</Text>
+          <Text style={styles.emptySubtitle}>
+            {hasActiveFilters ? 'Try adjusting your filters' : 'No transaction history available'}
+          </Text>
+          {hasActiveFilters && (
+            <TouchableOpacity style={styles.clearFiltersButton} onPress={clearFilters}>
+              <Text style={styles.clearFiltersButtonText}>Clear Filters</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      ) : (
+        <FlatList
+          data={filteredTransactions}
+          keyExtractor={(item) => item.id}
+          renderItem={renderTransaction}
+          style={styles.transactionList}
+          showsVerticalScrollIndicator={false}
+          refreshing={isLoading}
+          onRefresh={() => {
+            setIsLoading(true);
+            setTimeout(() => setIsLoading(false), 1000);
+          }}
+        />
+      )}
+    </SafeAreaView>
   );
 }
 
@@ -195,34 +316,22 @@ const styles = StyleSheet.create({
     gap: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',
+    flexWrap: 'wrap',
   },
-  filterButtonActive: {
+  clearButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(6, 140, 249, 0.2)',
-    paddingHorizontal: 16,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
     height: 40,
   },
-  filterTextActive: {
-    color: '#068cf9',
+  clearButtonText: {
+    color: '#ef4444',
     fontWeight: '500',
-    marginRight: 8,
-  },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#e5e7eb',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    height: 40,
-  },
-  filterText: {
-    color: '#000',
-    fontWeight: '500',
-    marginRight: 8,
+    marginLeft: 4,
+    fontSize: 14,
   },
   transactionList: {
     flex: 1,
@@ -279,5 +388,35 @@ const styles = StyleSheet.create({
   status: {
     fontSize: 12,
     fontWeight: '500',
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  clearFiltersButton: {
+    backgroundColor: '#068cf9',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  clearFiltersButtonText: {
+    color: '#fff',
+    fontWeight: '500',
+    fontSize: 16,
   },
 });

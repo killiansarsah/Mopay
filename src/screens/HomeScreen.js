@@ -1,7 +1,10 @@
 import React, { useContext, useState, useCallback } from 'react';
 import { View, Text, ScrollView, RefreshControl, StyleSheet, TextInput, Switch, Alert, TouchableOpacity, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
 import { MaterialIcons } from '@expo/vector-icons';
-import ActionGrid from '../components/ActionGrid';
+import OptimizedActionGrid from '../components/OptimizedActionGrid';
+import EnhancedInputField from '../components/EnhancedInputField';
 import TransactionCard from '../components/TransactionCard';
 import { AppContext } from '../state/AppContext';
 import { spacing, colors } from '../theme/tokens';
@@ -12,32 +15,114 @@ export default function HomeScreen() {
   const [amount, setAmount] = useState('');
   const [phone, setPhone] = useState('');
   const [ported, setPorted] = useState(false);
+  const [amountError, setAmountError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [countryCode, setCountryCode] = useState('+233');
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     setTimeout(() => setRefreshing(false), 800);
   }, []);
 
+  const formatPhoneNumber = (text) => {
+    // Remove all non-digits
+    const cleaned = text.replace(/\D/g, '');
+    // Format as XXX XXX XXXX
+    const match = cleaned.match(/^(\d{0,3})(\d{0,3})(\d{0,4})$/);
+    if (match) {
+      return [match[1], match[2], match[3]].filter(Boolean).join(' ');
+    }
+    return text;
+  };
+
+  const validateAmount = (value) => {
+    if (!value.trim()) {
+      setAmountError('Amount is required');
+      return false;
+    }
+    const numValue = parseFloat(value);
+    if (isNaN(numValue) || numValue <= 0) {
+      setAmountError('Please enter a valid amount');
+      return false;
+    }
+    if (numValue > 10000) {
+      setAmountError('Amount cannot exceed GHS 10,000');
+      return false;
+    }
+    setAmountError('');
+    return true;
+  };
+
+  const validatePhone = (value) => {
+    if (!value.trim()) {
+      setPhoneError('Phone number is required');
+      return false;
+    }
+    const cleaned = value.replace(/\D/g, '');
+    if (cleaned.length < 9 || cleaned.length > 10) {
+      setPhoneError('Please enter a valid phone number');
+      return false;
+    }
+    setPhoneError('');
+    return true;
+  };
+
+  const handleAmountChange = (text) => {
+    setAmount(text);
+    if (text.trim()) validateAmount(text);
+    else setAmountError('');
+  };
+
+  const handlePhoneChange = (text) => {
+    const formatted = formatPhoneNumber(text);
+    setPhone(formatted);
+    if (text.trim()) validatePhone(text);
+    else setPhoneError('');
+  };
+
+  const handleMenuPress = () => {
+    const menuOptions = [
+      { text: 'Settings', onPress: () => Alert.alert('Settings', 'App configuration options') },
+      { text: 'Support', onPress: () => Alert.alert('Support', 'Contact customer support') },
+      { text: 'Logout', style: 'destructive', onPress: () => Alert.alert('Logout', 'Are you sure you want to logout?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Logout', style: 'destructive', onPress: () => Alert.alert('Logged Out', 'You have been logged out successfully') }
+      ])},
+      { text: 'Cancel', style: 'cancel' }
+    ];
+    
+    Alert.alert('Menu', 'Choose an option:', menuOptions);
+  };
+
   const clearForm = () => {
     Alert.alert('Clear form', 'Are you sure you want to clear the form?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Clear', style: 'destructive', onPress: () => { setAmount(''); setPhone(''); setPorted(false); } },
+      { text: 'Clear', style: 'destructive', onPress: () => { 
+        setAmount(''); 
+        setPhone(''); 
+        setPorted(false);
+        setAmountError('');
+        setPhoneError('');
+      }},
     ]);
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f5f7f8ff' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f7f8ff' }}>
+      <StatusBar style="dark" backgroundColor="#f5f7f8" />
       {/* Top Bar (matches provided HTML layout) */}
       <View style={styles.topBar}>
         <View style={styles.leftGroup}>
-          <TouchableOpacity style={styles.iconBtn}><MaterialIcons name="menu" size={24} color="#111827" /></TouchableOpacity>
+          <TouchableOpacity style={styles.iconBtn} onPress={handleMenuPress}>
+            <MaterialIcons name="menu" size={24} color="#111827" />
+          </TouchableOpacity>
           <TouchableOpacity style={styles.themeBtn}>
             <View style={styles.themeToggleInner}>
-              <MaterialIcons name="dark_mode" size={16} color="#fff" />
+              <MaterialIcons name="dark-mode" size={16} color="#fff" />
             </View>
           </TouchableOpacity>
         </View>
-        <Text style={styles.topTitle}>MoPay Agent Portal</Text>
+        <Text style={styles.topTitle}>MoPay Agent</Text>
         <View style={styles.rightGroup}>
           <TouchableOpacity style={styles.profileBtn}>
             <MaterialIcons name="person" size={20} color="#fff" />
@@ -51,28 +136,41 @@ export default function HomeScreen() {
       >
         <View style={styles.container}>
           <View style={styles.formCard}>
-            <View style={styles.formRow}>
-              <View style={styles.formCol1}>
-                <Text style={styles.label}>Amount</Text>
-                <TextInput
-                  keyboardType="numeric"
-                  placeholder="GHS"
-                  placeholderTextColor="#9CA3AF"
-                  value={amount}
-                  onChangeText={setAmount}
-                  style={styles.input}
-                />
+            <View style={styles.formSection}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Amount *</Text>
+                <View style={[styles.inputContainer, amountError && styles.inputError]}>
+                  <Text style={styles.currencyPrefix}>GHS</Text>
+                  <TextInput
+                    keyboardType="numeric"
+                    placeholder="0.00"
+                    placeholderTextColor="#9CA3AF"
+                    value={amount}
+                    onChangeText={handleAmountChange}
+                    style={styles.amountInput}
+                    accessibilityLabel="Amount input"
+                    accessibilityHint="Enter the transaction amount in Ghana Cedis"
+                  />
+                </View>
+                {amountError ? <Text style={styles.errorText}>{amountError}</Text> : null}
               </View>
-              <View style={styles.formCol2}>
-                <Text style={styles.label}>Phone Number</Text>
-                <TextInput
-                  keyboardType="phone-pad"
-                  placeholder="Enter number"
-                  placeholderTextColor="#9CA3AF"
-                  value={phone}
-                  onChangeText={setPhone}
-                  style={styles.input}
-                />
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Phone Number *</Text>
+                <View style={[styles.inputContainer, phoneError && styles.inputError]}>
+                  <TextInput
+                    keyboardType="phone-pad"
+                    placeholder="024 123 4567"
+                    placeholderTextColor="#9CA3AF"
+                    value={phone}
+                    onChangeText={handlePhoneChange}
+                    style={styles.phoneInput}
+                    maxLength={12}
+                    accessibilityLabel="Phone number input"
+                    accessibilityHint="Enter the recipient's phone number"
+                  />
+                </View>
+                {phoneError ? <Text style={styles.errorText}>{phoneError}</Text> : null}
               </View>
             </View>
             <View style={styles.rowSmall}>
@@ -84,7 +182,7 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <ActionGrid onPress={(a) => Alert.alert(a.label)} />
+          <OptimizedActionGrid onPress={(a) => Alert.alert(a.label)} />
 
           <View style={{ marginTop: spacing.md }}>
             <Text style={{ color: '#111827', fontSize: 16, marginBottom: 8, fontWeight: '700' }}>Recent Transactions</Text>
@@ -94,7 +192,7 @@ export default function HomeScreen() {
           </View>
         </View>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -116,34 +214,66 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  formRow: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 12,
+  formSection: {
+    gap: 20,
+    marginBottom: 16,
   },
-  formCol1: {
-    flex: 1,
-    marginRight: 8,
-  },
-  formCol2: {
-    flex: 2,
-    marginLeft: 8,
+  inputGroup: {
+    marginBottom: 4,
   },
   label: {
-    color: '#374151',
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 6,
+    color: '#111827',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
     fontFamily: 'System',
   },
-  input: {
-    backgroundColor: '#f1f5f9',
-    color: '#111827',
-    padding: 16,
+  inputContainer: {
+    backgroundColor: '#ffffff',
+    borderWidth: 2,
+    borderColor: '#e5e7eb',
     borderRadius: 12,
-    fontSize: 16,
-    fontWeight: '400',
-    marginBottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 56,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  inputError: {
+    borderColor: '#ef4444',
+    backgroundColor: '#fef2f2',
+  },
+  currencyPrefix: {
+    color: '#6B7280',
+    fontSize: 18,
+    fontWeight: '600',
+    marginRight: 8,
+  },
+  amountInput: {
+    flex: 1,
+    color: '#111827',
+    fontSize: 20,
+    fontWeight: '600',
+    paddingVertical: 16,
+  },
+
+  phoneInput: {
+    flex: 1,
+    color: '#111827',
+    fontSize: 18,
+    fontWeight: '500',
+    paddingVertical: 16,
+  },
+  errorText: {
+    color: '#ef4444',
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 6,
+    marginLeft: 4,
   },
   topBar: {
     flexDirection: 'row',
