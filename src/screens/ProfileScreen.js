@@ -1,357 +1,400 @@
-import React, { useContext, useState } from 'react';
-import { View, Text, Switch, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
-import { AppContext } from '../state/AppContext';
-import { spacing, colors } from '../theme/tokens';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import SimManager from '../components/SimManager';
-import SecurityManager from '../components/SecurityManager';
+import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../context/ThemeContext';
+import { colors } from '../theme/tokens';
 
-export default function ProfileScreen() {
-  const { profile, theme, setTheme } = useContext(AppContext);
-  const [pushEnabled, setPushEnabled] = useState(true);
-  const [activeSim, setActiveSim] = useState(1);
+export default function ProfileScreen({ visible, onClose }) {
+  const { theme } = useTheme();
+  const [isEditing, setIsEditing] = useState(false);
+  const [profile, setProfile] = useState({
+    name: 'Yvonne',
+    displayName: 'Yvonne',
+    email: 'Yvonne@mopay.com',
+    profileImage: null,
+    subscription: 'Premium Agent',
+    subscriptionStatus: 'Active',
+    nextRenewal: '2025-12-01',
+    agentId: 'AG001234'
+  });
+  const [editedProfile, setEditedProfile] = useState(profile);
 
-  if (!profile) return null;
+  console.log('ProfileScreen rendered, visible:', visible);
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      const saved = await AsyncStorage.getItem('userProfile');
+      if (saved) {
+        const data = JSON.parse(saved);
+        setProfile(data);
+        setEditedProfile(data);
+      }
+    } catch (error) {
+      console.log('Error loading profile:', error);
+    }
+  };
+
+  const saveProfile = async () => {
+    try {
+      await AsyncStorage.setItem('userProfile', JSON.stringify(editedProfile));
+      setProfile(editedProfile);
+      setIsEditing(false);
+      Alert.alert('Success', 'Profile updated successfully');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save profile');
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditedProfile(profile);
+    setIsEditing(false);
+  };
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please grant camera roll permissions to upload a photo.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setEditedProfile({...editedProfile, profileImage: result.assets[0].uri});
+    }
+  };
+
+  if (!visible) return null;
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: theme === 'dark' ? '#121212' : '#fff' }} contentContainerStyle={{ padding: 0 }}>
-      {/* Top App Bar */}
-      <View style={styles.topBar}>
-        <View style={styles.topBarIcon}><MaterialIcons name="arrow-back" size={24} color={theme === 'dark' ? '#EAEAEA' : '#333'} /></View>
-        <Text style={[styles.topBarTitle, { color: theme === 'dark' ? '#EAEAEA' : '#333' }]}>Profile & Settings</Text>
-        <View style={styles.topBarIcon} />
-      </View>
-
-      <View style={styles.container}>
-        {/* Profile Header */}
-        <View style={styles.profileHeader}>
-          <Image
-            source={{ uri: profile.avatar || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCW7oZEzP-CnYaprXowZGNDTPWUJ02frcKQHuwv3Zuga2PqLv7hxx5PvBlLKGtAlKDXlMStaRMS5rpoHxDTTs0SpIRAuGoORRLlVJPflFO1mag46ZR6v6qf9iMliP8vLYdujHhgP6zPnBI6sZMg-S7-NCskUCQsSABpgsTSVnRuYoOuY6wmQ-pHChJsUAxhzsOi8T7qQexFuynoUMbgQdhkj2YbAAreYLALgLu7sRKV24wBhBVq9NW_WxjVYW4e2XTjN5ByCyHc7Jw' }}
-            style={styles.avatar}
-          />
-          <Text style={styles.name}>{profile.name || 'Kwame Asante'}</Text>
-          <Text style={styles.position}>Mobile Money Agent</Text>
-          <Text style={styles.agentId}>Agent ID: {profile.id || 'AGT001'}</Text>
+    <View style={styles.overlay}>
+      <View style={[styles.container, { backgroundColor: theme.card }]}>
+        <View style={[styles.header, { borderBottomColor: theme.border }]}>
+          <Text style={[styles.title, { color: theme.text }]}>My Profile</Text>
+          <TouchableOpacity onPress={onClose}>
+            <MaterialIcons name="close" size={24} color={theme.textSecondary} />
+          </TouchableOpacity>
         </View>
 
-        {/* SIM Management */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Active SIM</Text>
-          <View style={styles.card}>
-            <View style={styles.simToggleContainer}>
-              <TouchableOpacity 
-                style={[styles.simToggle, activeSim === 1 && styles.simToggleActive]} 
-                onPress={() => setActiveSim(1)}
-              >
-                <MaterialIcons name="sim-card" size={20} color={activeSim === 1 ? '#fff' : '#6b7280'} />
-                <Text style={[styles.simToggleText, activeSim === 1 && styles.simToggleTextActive]}>SIM 1</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.simToggle, activeSim === 2 && styles.simToggleActive]} 
-                onPress={() => setActiveSim(2)}
-              >
-                <MaterialIcons name="sim-card" size={20} color={activeSim === 2 ? '#fff' : '#6b7280'} />
-                <Text style={[styles.simToggleText, activeSim === 2 && styles.simToggleTextActive]}>SIM 2</Text>
-              </TouchableOpacity>
+        <ScrollView style={styles.content}>
+          <View style={styles.avatarSection}>
+            <TouchableOpacity 
+              style={styles.avatarContainer} 
+              onPress={isEditing ? pickImage : null}
+              disabled={!isEditing}
+            >
+              {(isEditing ? editedProfile.profileImage : profile.profileImage) ? (
+                <Image 
+                  source={{ uri: isEditing ? editedProfile.profileImage : profile.profileImage }} 
+                  style={styles.avatarImage} 
+                />
+              ) : (
+                <View style={styles.avatar}>
+                  <MaterialIcons name="person" size={40} color="#fff" />
+                </View>
+              )}
+              {isEditing && (
+                <View style={styles.cameraIcon}>
+                  <MaterialIcons name="camera-alt" size={16} color="#fff" />
+                </View>
+              )}
+            </TouchableOpacity>
+            <Text style={[styles.agentId, { color: theme.textSecondary }]}>Agent ID: {profile.agentId}</Text>
+            {isEditing && (
+              <Text style={[styles.photoHint, { color: theme.textSecondary }]}>Tap to change photo</Text>
+            )}
+          </View>
+
+          <View style={styles.form}>
+            <View style={styles.field}>
+              <Text style={[styles.label, { color: theme.text }]}>Full Name</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
+                value={isEditing ? editedProfile.name : profile.name}
+                onChangeText={(text) => setEditedProfile({...editedProfile, name: text})}
+                editable={isEditing}
+                placeholder="Enter your full name"
+                placeholderTextColor={theme.textSecondary}
+              />
             </View>
-            <View style={styles.divider} />
-            <View style={styles.infoRow}>
-              <MaterialIcons name="network-cell" size={22} color={theme === 'dark' ? '#9ca3af' : '#6b7280'} />
-              <View style={styles.infoCol}>
-                <Text style={styles.infoLabel}>Network</Text>
-                <Text style={styles.infoValue}>{activeSim === 1 ? 'MTN Mobile Money' : 'Vodafone Cash'}</Text>
+
+            <View style={styles.field}>
+              <Text style={[styles.label, { color: theme.text }]}>Display Name</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
+                value={isEditing ? editedProfile.displayName : profile.displayName}
+                onChangeText={(text) => setEditedProfile({...editedProfile, displayName: text})}
+                editable={isEditing}
+                placeholder="How others see your name"
+                placeholderTextColor={theme.textSecondary}
+              />
+            </View>
+
+            <View style={styles.field}>
+              <Text style={[styles.label, { color: theme.text }]}>Email</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.background, borderColor: theme.border, color: theme.text }]}
+                value={isEditing ? editedProfile.email : profile.email}
+                onChangeText={(text) => setEditedProfile({...editedProfile, email: text})}
+                editable={isEditing}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                placeholder="Enter your email"
+                placeholderTextColor={theme.textSecondary}
+              />
+            </View>
+
+            <View style={styles.subscriptionSection}>
+              <Text style={[styles.sectionTitle, { color: theme.text }]}>Subscription Details</Text>
+              
+              <View style={[styles.subscriptionCard, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                <View style={styles.subscriptionHeader}>
+                  <View style={styles.subscriptionBadge}>
+                    <MaterialIcons name="star" size={16} color="#fff" />
+                  </View>
+                  <View style={styles.subscriptionInfo}>
+                    <Text style={[styles.subscriptionName, { color: theme.text }]}>{profile.subscription}</Text>
+                    <View style={styles.statusContainer}>
+                      <View style={[styles.statusDot, { backgroundColor: profile.subscriptionStatus === 'Active' ? '#10b981' : '#f59e0b' }]} />
+                      <Text style={[styles.subscriptionStatus, { color: profile.subscriptionStatus === 'Active' ? '#10b981' : '#f59e0b' }]}>
+                        {profile.subscriptionStatus}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+                
+                <View style={styles.renewalInfo}>
+                  <MaterialIcons name="schedule" size={16} color={theme.textSecondary} />
+                  <Text style={[styles.renewalText, { color: theme.textSecondary }]}>Next renewal: {profile.nextRenewal}</Text>
+                </View>
               </View>
             </View>
           </View>
-        </View>
+        </ScrollView>
 
-        {/* Personal Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Personal Information</Text>
-          <View style={styles.card}>
-            <View style={styles.infoRow}>
-              <MaterialIcons name="phone" size={22} color={theme === 'dark' ? '#9ca3af' : '#6b7280'} />
-              <View style={styles.infoCol}><Text style={styles.infoLabel}>Phone</Text><Text style={styles.infoValue}>{profile.phone}</Text></View>
+        <View style={styles.actions}>
+          {isEditing ? (
+            <View style={styles.editActions}>
+              <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={cancelEdit}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.button, styles.saveButton]} onPress={saveProfile}>
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
             </View>
-            <View style={styles.divider} />
-            <View style={styles.infoRow}>
-              <MaterialIcons name="email" size={22} color={theme === 'dark' ? '#9ca3af' : '#6b7280'} />
-              <View style={styles.infoCol}><Text style={styles.infoLabel}>Email</Text><Text style={styles.infoValue}>{profile.email || 'kwame.asante@mopay.gh'}</Text></View>
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.infoRow}>
-              <MaterialIcons name="location-on" size={22} color={theme === 'dark' ? '#9ca3af' : '#6b7280'} />
-              <View style={styles.infoCol}><Text style={styles.infoLabel}>Location</Text><Text style={styles.infoValue}>{profile.location || 'Accra, Ghana'}</Text></View>
-            </View>
-          </View>
-        </View>
-
-        {/* Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Settings</Text>
-          <View style={styles.card}>
-            <View style={styles.prefRow}>
-              <View style={styles.prefIcon}><MaterialIcons name="notifications" size={22} color={theme === 'dark' ? '#EAEAEA' : '#333'} /></View>
-              <Text style={styles.prefLabel}>Notifications</Text>
-              <Switch value={pushEnabled} onValueChange={setPushEnabled} />
-            </View>
-            <View style={styles.divider} />
-            <View style={styles.prefRow}>
-              <View style={styles.prefIcon}><MaterialIcons name="dark-mode" size={22} color={theme === 'dark' ? '#EAEAEA' : '#333'} /></View>
-              <Text style={styles.prefLabel}>Dark Mode</Text>
-              <Switch value={theme === 'dark'} onValueChange={(v) => setTheme(v ? 'dark' : 'light')} />
-            </View>
-          </View>
-        </View>
-
-        {/* Security */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Security</Text>
-          <View style={styles.card}>
-            <TouchableOpacity style={styles.actionRow}>
-              <View style={styles.actionIcon}><MaterialIcons name="password" size={22} color={theme === 'dark' ? '#EAEAEA' : '#333'} /></View>
-              <Text style={styles.actionLabel}>Change PIN</Text>
-              <MaterialIcons name="chevron-right" size={22} color={theme === 'dark' ? '#9ca3af' : '#6b7280'} />
+          ) : (
+            <TouchableOpacity style={[styles.button, styles.editButton]} onPress={() => setIsEditing(true)}>
+              <MaterialIcons name="edit" size={20} color="#fff" />
+              <Text style={styles.editButtonText}>Edit Profile</Text>
             </TouchableOpacity>
-            <View style={styles.divider} />
-            <TouchableOpacity style={styles.actionRow}>
-              <View style={styles.actionIcon}><MaterialIcons name="fingerprint" size={22} color={theme === 'dark' ? '#EAEAEA' : '#333'} /></View>
-              <Text style={styles.actionLabel}>Biometric Auth</Text>
-              <MaterialIcons name="chevron-right" size={22} color={theme === 'dark' ? '#9ca3af' : '#6b7280'} />
-            </TouchableOpacity>
-          </View>
+          )}
         </View>
-
-        {/* Support */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support</Text>
-          <View style={styles.card}>
-            <TouchableOpacity style={styles.actionRow}>
-              <View style={styles.actionIcon}><MaterialIcons name="help" size={22} color={theme === 'dark' ? '#EAEAEA' : '#333'} /></View>
-              <Text style={styles.actionLabel}>Help Center</Text>
-              <MaterialIcons name="chevron-right" size={22} color={theme === 'dark' ? '#9ca3af' : '#6b7280'} />
-            </TouchableOpacity>
-            <View style={styles.divider} />
-            <TouchableOpacity style={styles.actionRow}>
-              <View style={styles.actionIcon}><MaterialIcons name="edit" size={22} color={theme === 'dark' ? '#EAEAEA' : '#333'} /></View>
-              <Text style={styles.actionLabel}>Edit Profile</Text>
-              <MaterialIcons name="chevron-right" size={22} color={theme === 'dark' ? '#9ca3af' : '#6b7280'} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Logout */}
-        <TouchableOpacity style={styles.logoutBtn}>
-          <MaterialIcons name="logout" size={22} color={theme === 'dark' ? '#f87171' : '#dc2626'} />
-          <Text style={styles.logoutBtnText}>Logout</Text>
-        </TouchableOpacity>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  topBar: {
-    flexDirection: 'row',
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
-    paddingBottom: 8,
-    backgroundColor: 'transparent',
-  },
-  topBarIcon: { width: 40, alignItems: 'center' },
-  topBarTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 20,
-    fontWeight: '700',
-    letterSpacing: -0.5,
+    zIndex: 1000,
   },
   container: {
-    padding: 16,
-    gap: 32,
+    width: '90%',
+    maxWidth: 400,
+    maxHeight: '80%',
+    borderRadius: 16,
+    backgroundColor: '#fff',
   },
-  profileHeader: {
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 8,
+    padding: 20,
+    borderBottomWidth: 1,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  content: {
+    flex: 1,
+  },
+  avatarSection: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  avatarContainer: {
+    position: 'relative',
     marginBottom: 8,
   },
   avatar: {
-    width: 112,
-    height: 112,
-    borderRadius: 56,
-    backgroundColor: '#e5e7eb',
-    marginBottom: 8,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: colors.primaryStart,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  name: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#222',
-    marginBottom: 2,
-    textAlign: 'center',
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
-  position: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#068cf9',
-    marginBottom: 4,
-    textAlign: 'center',
+  cameraIcon: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.primaryStart,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   agentId: {
-    color: '#6b7280',
-    fontSize: 14,
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  summary: {
-    fontSize: 16,
-    color: '#4b5563',
-    textAlign: 'center',
-    lineHeight: 22,
-    paddingHorizontal: 16,
-  },
-  skillsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  skillTag: {
-    backgroundColor: '#e0f2fe',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: '#068cf9',
-  },
-  skillText: {
-    color: '#068cf9',
     fontSize: 14,
     fontWeight: '500',
   },
-  section: {
-    marginTop: 8,
+  photoHint: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  form: {
+    padding: 20,
+    paddingTop: 0,
+  },
+  field: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
     marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+  },
+  subscriptionSection: {
+    marginTop: 8,
   },
   sectionTitle: {
-    color: '#6b7280',
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: '700',
-    textTransform: 'uppercase',
-    marginBottom: 8,
-    marginLeft: 4,
-    letterSpacing: 1,
+    marginBottom: 12,
   },
-  card: {
-    backgroundColor: '#f3f4f6',
-    borderRadius: 16,
+  subscriptionCard: {
+    borderWidth: 1,
+    borderRadius: 12,
     padding: 16,
-    marginBottom: 8,
-    gap: 0,
   },
-  infoRow: {
+  subscriptionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 0,
-    paddingVertical: 6,
+    marginBottom: 12,
   },
-  infoCol: { flex: 1 },
-  infoLabel: {
-    color: '#6b7280',
-    fontSize: 13,
-    marginBottom: 1,
+  subscriptionBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primaryStart,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
-  infoValue: {
-    color: '#222',
+  subscriptionInfo: {
+    flex: 1,
+  },
+  subscriptionName: {
     fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  subscriptionStatus: {
+    fontSize: 14,
     fontWeight: '500',
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#e5e7eb',
-    marginVertical: 2,
+  renewalInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  editBtn: {
+  renewalText: {
+    fontSize: 14,
+    marginLeft: 6,
+  },
+  actions: {
+    padding: 20,
+  },
+  button: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#007AFF',
-    borderRadius: 10,
-    paddingVertical: 12,
-    marginTop: 8,
-    gap: 8,
+    padding: 12,
+    borderRadius: 8,
+    minHeight: 48,
   },
-  editBtnText: {
+  editButton: {
+    backgroundColor: colors.primaryStart,
+  },
+  editButtonText: {
     color: '#fff',
-    fontWeight: '700',
     fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
-  prefRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    gap: 8,
-  },
-  prefIcon: { width: 32, alignItems: 'center' },
-  prefLabel: {
-    flex: 1,
-    color: '#222',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 10,
-    gap: 8,
-  },
-  actionIcon: { width: 32, alignItems: 'center' },
-  actionLabel: {
-    flex: 1,
-    color: '#222',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  logoutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(220,38,38,0.08)',
-    borderRadius: 10,
-    paddingVertical: 14,
-    marginTop: 16,
-    gap: 8,
-  },
-  logoutBtnText: {
-    color: '#dc2626',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  simToggleContainer: {
+  editActions: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 8,
   },
-  simToggle: {
+  cancelButton: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#e5e7eb',
-    borderRadius: 10,
-    paddingVertical: 12,
-    gap: 8,
+    backgroundColor: '#f3f4f6',
   },
-  simToggleActive: {
-    backgroundColor: '#007AFF',
-  },
-  simToggleText: {
-    color: '#6b7280',
+  cancelButtonText: {
+    color: '#374151',
     fontSize: 16,
     fontWeight: '600',
   },
-  simToggleTextActive: {
+  saveButton: {
+    flex: 1,
+    backgroundColor: colors.primaryStart,
+  },
+  saveButtonText: {
     color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

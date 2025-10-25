@@ -6,6 +6,7 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import SimpleSimSelector from '../components/SimpleSimSelector';
 import { useTheme } from '../context/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const RadioButton = ({ selected, onPress, label }) => (
   <TouchableOpacity style={styles.radioContainer} onPress={onPress}>
@@ -58,11 +59,10 @@ export default function SettingsScreen({ navigation }) {
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricType, setBiometricType] = useState('');
+
   const [notifications, setNotifications] = useState({
     push: true,
-    sms: false,
-    email: true,
-    transactions: true
+    sms: false
   });
   const [selectedLanguage, setSelectedLanguage] = useState('English');
 
@@ -75,10 +75,15 @@ export default function SettingsScreen({ navigation }) {
     setSettingsSaved(false);
   };
 
-  const saveSettings = () => {
-    // Save settings logic here
-    setSettingsSaved(true);
-    setTimeout(() => setSettingsSaved(false), 2000);
+  const saveSettings = async () => {
+    try {
+      await AsyncStorage.setItem('thresholdSettings', JSON.stringify(thresholds));
+      await AsyncStorage.setItem('abnormalWarningEnabled', JSON.stringify(abnormalWarningEnabled));
+      setSettingsSaved(true);
+      setTimeout(() => setSettingsSaved(false), 2000);
+    } catch (error) {
+      console.log('Error saving settings:', error);
+    }
   };
 
   const handleProfileImageChange = () => {
@@ -100,6 +105,8 @@ export default function SettingsScreen({ navigation }) {
       Alert.alert('Error', 'Unable to open payment platform');
     });
   };
+  
+
   
   const handleNotificationChange = (type, value) => {
     setNotifications(prev => ({ ...prev, [type]: value }));
@@ -210,8 +217,8 @@ export default function SettingsScreen({ navigation }) {
             </View>
             
             <View style={styles.accountInfo}>
-              <Text style={[styles.accountName, { color: theme.text }]}>John Doe</Text>
-              <Text style={[styles.accountEmail, { color: theme.textSecondary }]}>john.doe@mopay.com</Text>
+              <Text style={[styles.accountName, { color: theme.text }]}>Yvonne</Text>
+              <Text style={[styles.accountEmail, { color: theme.textSecondary }]}>Yvonne@mopay.com</Text>
               <View style={styles.accountStatus}>
                 <View style={styles.statusDot} />
                 <Text style={styles.statusText}>Active Agent</Text>
@@ -230,7 +237,7 @@ export default function SettingsScreen({ navigation }) {
                 <Text style={[styles.planName, { color: theme.text }]}>Premium Agent Plan</Text>
                 <View style={styles.renewalInfo}>
                   <Text style={[styles.renewalLabel, { color: theme.textSecondary }]}>Next Renewal:</Text>
-                  <Text style={[styles.renewalDate, { color: theme.text }]}>March 15, 2024</Text>
+                  <Text style={[styles.renewalDate, { color: theme.text }]}>December 1, 2025</Text>
                 </View>
               </View>
               
@@ -347,6 +354,8 @@ export default function SettingsScreen({ navigation }) {
           </Text>
         </View>
         
+
+        
         <View style={styles.divider} />
         
         {/* Notifications */}
@@ -367,25 +376,13 @@ export default function SettingsScreen({ navigation }) {
           
           <View style={styles.settingItem}>
             <View style={styles.settingInfo}>
-              <Ionicons name="mail" size={20} color="#F59E0B" />
-              <Text style={[styles.settingLabel, { color: theme.text }]}>Email Alerts</Text>
+              <Ionicons name="chatbubble" size={20} color="#3B82F6" />
+              <Text style={[styles.settingLabel, { color: theme.text }]}>SMS Notifications</Text>
             </View>
             <Switch
-              value={notifications.email}
-              onValueChange={(value) => handleNotificationChange('email', value)}
-              trackColor={{ false: '#E5E7EB', true: '#F59E0B' }}
-            />
-          </View>
-          
-          <View style={styles.settingItem}>
-            <View style={styles.settingInfo}>
-              <Ionicons name="card" size={20} color="#8B5CF6" />
-              <Text style={[styles.settingLabel, { color: theme.text }]}>Transaction Alerts</Text>
-            </View>
-            <Switch
-              value={notifications.transactions}
-              onValueChange={(value) => handleNotificationChange('transactions', value)}
-              trackColor={{ false: '#E5E7EB', true: '#8B5CF6' }}
+              value={notifications.sms}
+              onValueChange={(value) => handleNotificationChange('sms', value)}
+              trackColor={{ false: '#E5E7EB', true: '#3B82F6' }}
             />
           </View>
         </View>
