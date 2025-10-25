@@ -7,6 +7,7 @@ import HomeScreen from '../screens/HomeScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import ReportsScreen from '../screens/ReportsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import MarketplaceScreen from '../screens/MarketplaceScreen';
 import { useColorScheme } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { AppProvider } from '../state/AppContext';
@@ -29,6 +30,9 @@ function Tabs() {
         tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: theme.textSecondary,
         tabBarIcon: ({ color, size }) => {
+          if (route.name === 'Marketplace') {
+            return <MaterialIcons name="storefront" size={size} color={color} />;
+          }
           const name = {
             Home: 'home',
             History: 'time',
@@ -43,6 +47,7 @@ function Tabs() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="History" component={HistoryScreen} />
       <Tab.Screen name="Reports" component={ReportsScreen} />
+      <Tab.Screen name="Marketplace" component={MarketplaceScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
   );

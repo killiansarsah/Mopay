@@ -1,6 +1,7 @@
 # MoPay Agent App Icons
 
 ## 📱 Current Status
+
 ✅ **All icon files exist** and are properly configured in `app.json`
 ✅ **App configuration** is complete for iOS, Android, and Web
 ✅ **SVG template** available for customization
@@ -10,12 +11,14 @@
 Your MoPay Agent app now has all required icons:
 
 ### 📂 Assets Folder Contents:
+
 - `icon.png` - Main app icon (1024x1024px)
 - `adaptive-icon.png` - Android adaptive icon (1024x1024px)
 - `splash-icon.png` - Splash screen icon (512x512px)
 - `favicon.png` - Web browser favicon (64x64px)
 
 ### ⚙️ App Configuration (app.json):
+
 ```json
 {
   "expo": {
@@ -38,18 +41,21 @@ Your MoPay Agent app now has all required icons:
 ## 🚀 How to Customize Icons
 
 ### Option 1: Use the SVG Template
+
 1. Open `assets/mopay-icon-template.svg` in design software
 2. Customize colors, text, and design elements
 3. Export as PNG in required sizes
 4. Replace files in `assets/` folder
 
 ### Option 2: Create from Scratch
+
 1. Use design software (Figma, Illustrator, Canva)
 2. Follow specifications in `ICON_SPECIFICATIONS.md`
 3. Export PNG files with transparent backgrounds
 4. Replace existing icon files
 
 ### Option 3: Use Online Tools
+
 - **Canva**: Quick icon creation with templates
 - **Figma**: Professional design with proper specifications
 - **Icon generators**: Hatchful by Shopify, Looka, etc.
@@ -57,12 +63,14 @@ Your MoPay Agent app now has all required icons:
 ## 🎯 Design Guidelines
 
 ### Brand Identity:
+
 - **Name**: MoPay Agent
 - **Primary Color**: #007bff (MoPay Blue)
 - **Style**: Modern, professional, trustworthy
 - **Elements**: Mobile phone, money/finance symbols
 
 ### Icon Design Ideas:
+
 - Circular badge with "MP" or "MoPay Agent"
 - Mobile phone with money symbols
 - Professional financial app appearance

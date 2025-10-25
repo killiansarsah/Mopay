@@ -3,7 +3,9 @@ module.exports = function (api) {
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      // 'react-native-reanimated/plugin' // Temporarily disabled due to plugin issue
+      '@babel/plugin-transform-optional-chaining',
+      '@babel/plugin-transform-nullish-coalescing-operator',
+      'react-native-reanimated/plugin'
     ],
   };
 };
