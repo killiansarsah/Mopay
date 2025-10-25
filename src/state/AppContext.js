@@ -24,11 +24,23 @@ export function AppProvider({ children }) {
     })();
   }, []);
 
+  const addTransaction = (newTransaction) => {
+    const transaction = {
+      ...newTransaction,
+      id: `tx_${Date.now()}`,
+      date: new Date().toISOString(),
+      status: 'Success'
+    };
+    setTransactions(prev => [transaction, ...prev]);
+    return transaction;
+  };
+
   const value = {
     profile,
     setProfile,
     transactions,
     setTransactions,
+    addTransaction,
     theme,
     setTheme,
   };

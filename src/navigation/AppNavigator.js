@@ -11,15 +11,23 @@ import { useColorScheme } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { AppProvider } from '../state/AppContext';
 import { MultiNetworkProvider } from '../state/MultiNetworkContext';
+import { useTheme } from '../context/ThemeContext';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function Tabs() {
+  const { theme, isDark } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarStyle: {
+          backgroundColor: theme.card,
+          borderTopColor: theme.border,
+        },
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textSecondary,
         tabBarIcon: ({ color, size }) => {
           const name = {
             Home: 'home',
@@ -47,7 +55,7 @@ export default function AppNavigator() {
     <SafeAreaProvider>
       <MultiNetworkProvider>
         <AppProvider>
-          <NavigationContainer theme={scheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
               <Stack.Screen name="Main" component={Tabs} />
             </Stack.Navigator>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
 export default function FilterDropdown({ 
   label, 
@@ -13,6 +14,7 @@ export default function FilterDropdown({
   loading = false,
   error = null
 }) {
+  const { theme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
 
@@ -25,6 +27,7 @@ export default function FilterDropdown({
     <TouchableOpacity
       style={[
         styles.option,
+        { borderBottomColor: theme.border },
         selectedValue === item.value && styles.selectedOption
       ]}
       onPress={() => handleSelect(item.value)}
@@ -44,6 +47,7 @@ export default function FilterDropdown({
         )}
         <Text style={[
           styles.optionText,
+          { color: theme.text },
           selectedValue === item.value && styles.selectedOptionText
         ]}>
           {item.label}
@@ -60,6 +64,7 @@ export default function FilterDropdown({
       <TouchableOpacity
         style={[
           styles.dropdownButton,
+          { backgroundColor: theme.surface, borderColor: theme.border },
           isActive && styles.dropdownButtonActive,
           isOpen && styles.dropdownButtonOpen,
           disabled && styles.dropdownButtonDisabled,
@@ -84,6 +89,7 @@ export default function FilterDropdown({
           ) : (
             <Text style={[
               styles.dropdownText,
+              { color: theme.text },
               isActive && styles.dropdownTextActive,
               disabled && styles.dropdownTextDisabled
             ]}>
@@ -112,9 +118,9 @@ export default function FilterDropdown({
           activeOpacity={1}
           onPress={() => setIsOpen(false)}
         >
-          <View style={styles.dropdownModal}>
+          <View style={[styles.dropdownModal, { backgroundColor: theme.card }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{label}</Text>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>{label}</Text>
               <TouchableOpacity onPress={() => setIsOpen(false)}>
                 <MaterialIcons name="close" size={24} color="#6b7280" />
               </TouchableOpacity>

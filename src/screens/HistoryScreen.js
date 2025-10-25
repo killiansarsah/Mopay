@@ -1,52 +1,71 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useContext } from 'react';
 import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { MaterialIcons } from '@expo/vector-icons';
 import FilterDropdown from '../components/FilterDropdown';
+import { useTheme } from '../context/ThemeContext';
+import { AppContext } from '../state/AppContext';
 
-const mockTransactions = [
-  {
-    id: '1',
-    type: 'Cash In',
-    amount: 50.00,
-    phone: '0123456789',
-    status: 'Success',
-    date: '2024-01-12T10:30:00Z',
-    icon: 'south-west',
-    color: '#22c55e'
-  },
-  {
-    id: '2',
-    type: 'Cash Out',
-    amount: 20.00,
-    phone: '9876543210',
-    status: 'Failed',
-    date: '2024-01-11T14:45:00Z',
-    icon: 'north-east',
-    color: '#ef4444'
-  },
-  {
-    id: '3',
-    type: 'Bill Payment',
-    amount: 15.50,
-    transactionId: 'MOP12345',
-    status: 'Success',
-    date: '2024-01-10T09:15:00Z',
-    icon: 'receipt-long',
-    color: '#068cf9'
-  },
-  {
-    id: '4',
-    type: 'Cash In',
-    amount: 100.00,
-    phone: '555123456',
-    status: 'Pending',
-    date: '2024-01-09T17:00:00Z',
-    icon: 'south-west',
-    color: '#f59e0b'
-  }
-];
+// Generate 100+ realistic Ghanaian transactions for history
+const generateHistoryTransactions = () => {
+  const networkPrefixes = {
+    MTN: ['024', '054', '055', '059'],
+    AirtelTigo: ['027', '057', '026', '056'],
+    Vodafone: ['020', '050', '023', '053']
+  };
+  
+  const transactionTypes = [
+    { type: 'Cash In', icon: 'south-west', color: '#22c55e' },
+    { type: 'Cash Out', icon: 'north-east', color: '#ef4444' },
+    { type: 'Send Money', icon: 'send', color: '#068cf9' },
+    { type: 'Buy Airtime', icon: 'phone', color: '#8b5cf6' },
+    { type: 'Bill Payment', icon: 'receipt-long', color: '#f59e0b' }
+  ];
+  
+  const statuses = ['Success', 'Pending', 'Failed'];
+  
+  const generatePhone = () => {
+    const networks = Object.keys(networkPrefixes);
+    const network = networks[Math.floor(Math.random() * networks.length)];
+    const prefix = networkPrefixes[network][Math.floor(Math.random() * networkPrefixes[network].length)];
+    const suffix = Math.floor(Math.random() * 10000000).toString().padStart(7, '0');
+    return `${prefix}${suffix}`;
+  };
+  
+  const generateAmount = (type) => {
+    const ranges = {
+      'Cash In': [20, 2000],
+      'Cash Out': [10, 1500],
+      'Send Money': [5, 800],
+      'Buy Airtime': [2, 100],
+      'Bill Payment': [25, 500]
+    };
+    const [min, max] = ranges[type] || [5, 500];
+    return Math.round((Math.random() * (max - min) + min) * 100) / 100;
+  };
+  
+  return Array.from({ length: 120 }, (_, i) => {
+    const txType = transactionTypes[Math.floor(Math.random() * transactionTypes.length)];
+    const amount = generateAmount(txType.type);
+    const status = statuses[Math.floor(Math.random() * statuses.length)];
+    const hoursAgo = Math.floor(Math.random() * 2160); // Up to 90 days
+    
+    return {
+      id: `hist_${(i + 1).toString().padStart(3, '0')}`,
+      type: txType.type,
+      amount,
+      phone: txType.type !== 'Bill Payment' ? generatePhone() : null,
+      transactionId: txType.type === 'Bill Payment' ? `BILL${Math.floor(Math.random() * 100000)}` : null,
+      status,
+      date: new Date(Date.now() - hoursAgo * 1000 * 60 * 60).toISOString(),
+      icon: txType.icon,
+      color: txType.color
+    };
+  });
+};
+
+const mockTransactions = generateHistoryTransactions();
 
 const statusColors = {
   Success: '#22c55e',
@@ -55,6 +74,8 @@ const statusColors = {
 };
 
 export default function HistoryScreen({ navigation }) {
+  const { theme } = useTheme();
+  const { transactions } = useContext(AppContext);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDateRange, setSelectedDateRange] = useState('all');
   const [selectedTransactionType, setSelectedTransactionType] = useState('all');
@@ -79,9 +100,43 @@ export default function HistoryScreen({ navigation }) {
     { label: 'Airtime', value: 'Airtime' },
   ];
 
+  // Combine global transactions with mock data and filter
+  const allTransactions = useMemo(() => {
+    const combinedTransactions = [...transactions, ...mockTransactions];
+    // Remove duplicates and sort by date (most recent first)
+    const uniqueTransactions = combinedTransactions.filter((tx, index, self) => 
+      index === self.findIndex(t => t.id === tx.id)
+    );
+    return uniqueTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [transactions]);
+
+  // Add icon and color to transactions that don't have them
+  const addIconsToTransactions = (transactions) => {
+    return transactions.map(tx => {
+      if (tx.icon && tx.color) return tx;
+      
+      const iconMap = {
+        'Cash In': { icon: 'call-received', color: '#22c55e' },
+        'cash_in': { icon: 'call-received', color: '#22c55e' },
+        'Cash Out': { icon: 'call-made', color: '#ef4444' },
+        'cash_out': { icon: 'call-made', color: '#ef4444' },
+        'Send Money': { icon: 'send', color: '#068cf9' },
+        'send_money': { icon: 'send', color: '#068cf9' },
+        'Buy Airtime': { icon: 'phone-android', color: '#8b5cf6' },
+        'buy_airtime': { icon: 'phone-android', color: '#8b5cf6' },
+        'Airtime': { icon: 'phone-android', color: '#8b5cf6' },
+        'Bill Payment': { icon: 'receipt', color: '#f59e0b' },
+        'pay_bills': { icon: 'receipt', color: '#f59e0b' }
+      };
+      
+      const iconData = iconMap[tx.type] || { icon: 'account-balance-wallet', color: '#6b7280' };
+      return { ...tx, ...iconData };
+    });
+  };
+
   // Filter transactions based on selected criteria
   const filteredTransactions = useMemo(() => {
-    let filtered = mockTransactions;
+    let filtered = addIconsToTransactions(allTransactions);
 
     // Search filter
     if (searchQuery.trim()) {
@@ -130,7 +185,7 @@ export default function HistoryScreen({ navigation }) {
     }
 
     return filtered;
-  }, [searchQuery, selectedDateRange, selectedTransactionType]);
+  }, [allTransactions, searchQuery, selectedDateRange, selectedTransactionType]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -158,15 +213,15 @@ export default function HistoryScreen({ navigation }) {
   const hasActiveFilters = selectedDateRange !== 'all' || selectedTransactionType !== 'all' || searchQuery.trim();
 
   const renderTransaction = ({ item }) => (
-    <View style={styles.transactionItem}>
+    <View style={[styles.transactionItem, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
       <View style={styles.transactionLeft}>
-        <View style={[styles.iconContainer, { backgroundColor: `${item.color}20` }]}>
-          <MaterialIcons name={item.icon} size={24} color={item.color} />
+        <View style={[styles.iconContainer, { backgroundColor: `${item.color || '#6b7280'}20` }]}>
+          <MaterialIcons name={item.icon || 'account-balance-wallet'} size={24} color={item.color || '#6b7280'} />
         </View>
         <View style={styles.transactionDetails}>
-          <Text style={styles.transactionType}>{item.type}</Text>
-          <Text style={styles.transactionDate}>{formatDate(item.date)}</Text>
-          <Text style={styles.transactionInfo}>
+          <Text style={[styles.transactionType, { color: theme.text }]}>{item.type}</Text>
+          <Text style={[styles.transactionDate, { color: theme.textSecondary }]}>{formatDate(item.date)}</Text>
+          <Text style={[styles.transactionInfo, { color: theme.textSecondary }]}>
             {item.phone ? `${item.type === 'Cash In' ? 'From' : 'To'}: ${item.phone}` : `ID: ${item.transactionId}`}
           </Text>
         </View>
@@ -183,32 +238,32 @@ export default function HistoryScreen({ navigation }) {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" backgroundColor="#f5f7f8" />
-      <View style={styles.header}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <StatusBar style={theme.statusBar} backgroundColor={theme.surface} />
+      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
         <TouchableOpacity onPress={() => navigation.navigate('Home')}>
           <MaterialIcons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Transaction History</Text>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Transaction History</Text>
         <View style={styles.headerSpacer} />
       </View>
 
       <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
+        <View style={[styles.searchBar, { backgroundColor: theme.surface }]}>
           <View style={styles.searchIcon}>
             <MaterialIcons name="search" size={20} color="#6b7280" />
           </View>
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: theme.text }]}
             placeholder="Search by phone number, transaction ID..."
-            placeholderTextColor="#6b7280"
+            placeholderTextColor={theme.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
         </View>
       </View>
 
-      <View style={styles.filterContainer}>
+      <View style={[styles.filterContainer, { borderBottomColor: theme.border }]}>
         <FilterDropdown
           label="Date Range"
           options={dateRangeOptions}
@@ -236,8 +291,8 @@ export default function HistoryScreen({ navigation }) {
       {filteredTransactions.length === 0 ? (
         <View style={styles.emptyState}>
           <MaterialIcons name="history" size={64} color="#9ca3af" />
-          <Text style={styles.emptyTitle}>No Transactions Found</Text>
-          <Text style={styles.emptySubtitle}>
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>No Transactions Found</Text>
+          <Text style={[styles.emptySubtitle, { color: theme.textSecondary }]}>
             {hasActiveFilters ? 'Try adjusting your filters' : 'No transaction history available'}
           </Text>
           {hasActiveFilters && (
@@ -256,7 +311,8 @@ export default function HistoryScreen({ navigation }) {
           refreshing={isLoading}
           onRefresh={() => {
             setIsLoading(true);
-            setTimeout(() => setIsLoading(false), 1000);
+            // Refresh will automatically show updated transactions from context
+            setTimeout(() => setIsLoading(false), 500);
           }}
         />
       )}

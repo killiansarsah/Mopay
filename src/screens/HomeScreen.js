@@ -10,9 +10,30 @@ import UnifiedDashboard from '../components/UnifiedDashboard';
 import { AppContext } from '../state/AppContext';
 import { useMultiNetwork } from '../state/MultiNetworkContext';
 import { spacing, colors } from '../theme/tokens';
+import { useTheme } from '../context/ThemeContext';
 
 export default function HomeScreen() {
-  const { transactions } = useContext(AppContext);
+  const { theme } = useTheme();
+  const { transactions, addTransaction } = useContext(AppContext);
+  
+  // Get threshold settings from AsyncStorage
+  const [thresholds, setThresholds] = useState({ airtime: '', cashIn: '', cashOut: '' });
+  const [abnormalWarningEnabled, setAbnormalWarningEnabled] = useState(false);
+  
+  useEffect(() => {
+    loadThresholdSettings();
+  }, []);
+  
+  const loadThresholdSettings = async () => {
+    try {
+      const settings = await AsyncStorage.getItem('thresholdSettings');
+      const warningEnabled = await AsyncStorage.getItem('abnormalWarningEnabled');
+      if (settings) setThresholds(JSON.parse(settings));
+      if (warningEnabled) setAbnormalWarningEnabled(JSON.parse(warningEnabled));
+    } catch (error) {
+      console.log('Error loading threshold settings:', error);
+    }
+  };
   const [refreshing, setRefreshing] = useState(false);
   const [amount, setAmount] = useState('');
   const [phone, setPhone] = useState('');
@@ -111,10 +132,10 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f7f8ff' }}>
-      <StatusBar style="dark" backgroundColor="#f5f7f8" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+      <StatusBar style={theme.statusBar} backgroundColor={theme.surface} />
       {/* Top Bar (matches provided HTML layout) */}
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
         <View style={styles.leftGroup}>
           <TouchableOpacity style={styles.iconBtn} onPress={handleMenuPress}>
             <MaterialIcons name="menu" size={24} color="#111827" />
@@ -125,7 +146,7 @@ export default function HomeScreen() {
             </View>
           </TouchableOpacity>
         </View>
-        <Text style={styles.topTitle}>MoPay Agent</Text>
+        <Text style={[styles.topTitle, { color: theme.text }]}>MoPay Agent</Text>
         <View style={styles.rightGroup}>
           <TouchableOpacity style={styles.profileBtn}>
             <MaterialIcons name="person" size={20} color="#fff" />
@@ -138,19 +159,19 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
         <View style={styles.container}>
-          <View style={styles.formCard}>
+          <View style={[styles.formCard, { backgroundColor: theme.card }]}>
             <View style={styles.formSection}>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Amount *</Text>
-                <View style={[styles.inputContainer, amountError && styles.inputError]}>
-                  <Text style={styles.currencyPrefix}>GHS</Text>
+                <Text style={[styles.label, { color: theme.text }]}>Amount *</Text>
+                <View style={[styles.inputContainer, { backgroundColor: theme.card, borderColor: theme.border }, amountError && styles.inputError]}>
+                  <Text style={[styles.currencyPrefix, { color: theme.textSecondary }]}>GHS</Text>
                   <TextInput
                     keyboardType="numeric"
                     placeholder="0.00"
                     placeholderTextColor="#9CA3AF"
                     value={amount}
                     onChangeText={handleAmountChange}
-                    style={styles.amountInput}
+                    style={[styles.amountInput, { color: theme.text }]}
                     accessibilityLabel="Amount input"
                     accessibilityHint="Enter the transaction amount in Ghana Cedis"
                   />
@@ -159,15 +180,15 @@ export default function HomeScreen() {
               </View>
               
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Phone Number *</Text>
-                <View style={[styles.inputContainer, phoneError && styles.inputError]}>
+                <Text style={[styles.label, { color: theme.text }]}>Phone Number *</Text>
+                <View style={[styles.inputContainer, { backgroundColor: theme.card, borderColor: theme.border }, phoneError && styles.inputError]}>
                   <TextInput
                     keyboardType="phone-pad"
                     placeholder="024 123 4567"
                     placeholderTextColor="#9CA3AF"
                     value={phone}
                     onChangeText={handlePhoneChange}
-                    style={styles.phoneInput}
+                    style={[styles.phoneInput, { color: theme.text }]}
                     maxLength={12}
                     accessibilityLabel="Phone number input"
                     accessibilityHint="Enter the recipient's phone number"
@@ -179,17 +200,35 @@ export default function HomeScreen() {
             <View style={styles.rowSmall}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Switch value={ported} onValueChange={setPorted} />
-                <Text style={{ marginLeft: 8, color: '#374151ff' }}>Number is ported</Text>
+                <Text style={{ marginLeft: 8, color: theme.text }}>Number is ported</Text>
               </View>
               <Text onPress={clearForm} style={{ color: colors.primaryStart, fontWeight: '600' }}>Clear</Text>
             </View>
           </View>
 
-          <OptimizedActionGrid onPress={(a) => Alert.alert(a.label)} />
+          <OptimizedActionGrid onPress={(action) => {
+            if (amount && phone && validateAmount(amount) && validatePhone(phone)) {
+              const transaction = {
+                type: action.label,
+                amount: parseFloat(amount),
+                phone: phone.replace(/\s/g, ''),
+                network: phone.startsWith('024') || phone.startsWith('054') || phone.startsWith('055') ? 'MTN' : 
+                        phone.startsWith('027') || phone.startsWith('057') || phone.startsWith('026') ? 'AirtelTigo' : 'Vodafone',
+                commission: parseFloat(amount) * 0.025
+              };
+              addTransaction(transaction);
+              Alert.alert('Success', `${action.label} transaction completed successfully!`);
+              setAmount('');
+              setPhone('');
+              setPorted(false);
+            } else {
+              Alert.alert('Error', 'Please fill in valid amount and phone number');
+            }
+          }} />
 
           <View style={{ marginTop: spacing.md }}>
-            <Text style={{ color: '#111827', fontSize: 16, marginBottom: 8, fontWeight: '700' }}>Recent Transactions</Text>
-            {transactions.slice(0, 6).map((tx) => (
+            <Text style={{ color: theme.text, fontSize: 16, marginBottom: 8, fontWeight: '700' }}>Recent Transactions</Text>
+            {transactions.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6).map((tx) => (
               <TransactionCard key={tx.id} tx={tx} />
             ))}
           </View>

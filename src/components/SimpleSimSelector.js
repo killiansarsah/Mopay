@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
 const SimCard = ({ label, isSelected, onPress, icon, colors }) => (
   <TouchableOpacity
@@ -32,16 +33,17 @@ const SimCard = ({ label, isSelected, onPress, icon, colors }) => (
 );
 
 export default function SimpleSimSelector({ selectedSim, onSimChange, networkType = 'MTN' }) {
+  const { theme } = useTheme();
   const getNetworkColors = () => {
     switch (networkType) {
       case 'MTN':
-        return { bg: '#FFF9E6', border: '#FFCC00', primary: '#FFCC00', text: '#B45309' };
+        return { bg: theme.surface, border: '#FFCC00', primary: '#FFCC00', text: theme.text };
       case 'AirtelTigo':
-        return { bg: '#EFF6FF', border: '#3B82F6', primary: '#3B82F6', text: '#1E40AF' };
+        return { bg: theme.surface, border: '#3B82F6', primary: '#3B82F6', text: theme.text };
       case 'Telecel':
-        return { bg: '#FEF2F2', border: '#EF4444', primary: '#EF4444', text: '#B91C1C' };
+        return { bg: theme.surface, border: '#EF4444', primary: '#EF4444', text: theme.text };
       default:
-        return { bg: '#F9FAFB', border: '#E5E7EB', primary: '#6B7280', text: '#374151' };
+        return { bg: theme.surface, border: theme.border, primary: theme.primary, text: theme.text };
     }
   };
 

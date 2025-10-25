@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import SimpleSimSelector from '../components/SimpleSimSelector';
+import { useTheme } from '../context/ThemeContext';
 
 const RadioButton = ({ selected, onPress, label }) => (
   <TouchableOpacity style={styles.radioContainer} onPress={onPress}>
@@ -15,18 +16,22 @@ const RadioButton = ({ selected, onPress, label }) => (
   </TouchableOpacity>
 );
 
-const NetworkSection = ({ title, simSettings, onSimChange, networkType }) => (
-  <View style={styles.networkSection}>
-    <Text style={styles.networkTitle}>{title}</Text>
+const NetworkSection = ({ title, simSettings, onSimChange, networkType }) => {
+  const { theme } = useTheme();
+  return (
+    <View style={styles.networkSection}>
+      <Text style={[styles.networkTitle, { color: theme.textSecondary }]}>{title}</Text>
     <SimpleSimSelector
       selectedSim={simSettings}
       onSimChange={onSimChange}
       networkType={networkType}
     />
-  </View>
-);
+    </View>
+  );
+};
 
 export default function SettingsScreen({ navigation }) {
+  const { theme, isDark, toggleTheme } = useTheme();
   const [moneyTransferSettings, setMoneyTransferSettings] = useState({
     mtn: 'None',
     airtelTigo: 'None',
@@ -60,7 +65,7 @@ export default function SettingsScreen({ navigation }) {
     transactions: true
   });
   const [selectedLanguage, setSelectedLanguage] = useState('English');
-  const [darkMode, setDarkMode] = useState(false);
+
   const [hapticFeedback, setHapticFeedback] = useState(true);
   const [soundEffects, setSoundEffects] = useState(true);
   const [historyRetention, setHistoryRetention] = useState('6months');
@@ -181,19 +186,19 @@ export default function SettingsScreen({ navigation }) {
 
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" backgroundColor="#f5f7f8" />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: theme.surface }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Home')}>
           <MaterialIcons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Settings</Text>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView style={[styles.content, { backgroundColor: theme.background }]}>
         {/* Account Information Section */}
-        <View style={styles.accountSection}>
+        <View style={[styles.accountSection, { backgroundColor: theme.card }]}>
           <View style={styles.accountHeader}>
             <View style={styles.avatarContainer}>
               <View style={styles.avatar}>
@@ -205,8 +210,8 @@ export default function SettingsScreen({ navigation }) {
             </View>
             
             <View style={styles.accountInfo}>
-              <Text style={styles.accountName}>John Doe</Text>
-              <Text style={styles.accountEmail}>john.doe@mopay.com</Text>
+              <Text style={[styles.accountName, { color: theme.text }]}>John Doe</Text>
+              <Text style={[styles.accountEmail, { color: theme.textSecondary }]}>john.doe@mopay.com</Text>
               <View style={styles.accountStatus}>
                 <View style={styles.statusDot} />
                 <Text style={styles.statusText}>Active Agent</Text>
@@ -214,42 +219,42 @@ export default function SettingsScreen({ navigation }) {
             </View>
           </View>
           
-          <View style={styles.subscriptionCard}>
+          <View style={[styles.subscriptionCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <View style={styles.subscriptionHeader}>
               <Ionicons name="card-outline" size={20} color="#3B82F6" />
-              <Text style={styles.subscriptionTitle}>Subscription Plan</Text>
+              <Text style={[styles.subscriptionTitle, { color: theme.text }]}>Subscription Plan</Text>
             </View>
             
             <View style={styles.subscriptionDetails}>
               <View style={styles.planInfo}>
-                <Text style={styles.planName}>Premium Agent Plan</Text>
+                <Text style={[styles.planName, { color: theme.text }]}>Premium Agent Plan</Text>
                 <View style={styles.renewalInfo}>
-                  <Text style={styles.renewalLabel}>Next Renewal:</Text>
-                  <Text style={styles.renewalDate}>March 15, 2024</Text>
+                  <Text style={[styles.renewalLabel, { color: theme.textSecondary }]}>Next Renewal:</Text>
+                  <Text style={[styles.renewalDate, { color: theme.text }]}>March 15, 2024</Text>
                 </View>
               </View>
               
-              <TouchableOpacity style={styles.manageButton}>
-                <Text style={styles.manageButtonText}>Manage</Text>
+              <TouchableOpacity style={[styles.manageButton, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                <Text style={[styles.manageButtonText, { color: theme.primary }]}>Manage</Text>
                 <Ionicons name="chevron-forward" size={16} color="#3B82F6" />
               </TouchableOpacity>
             </View>
             
-            <View style={styles.renewalCountdown}>
+            <View style={[styles.renewalCountdown, { borderTopColor: theme.border }]}>
               <Ionicons name="time-outline" size={14} color="#10B981" />
-              <Text style={styles.countdownText}>Renews in 23 days</Text>
+              <Text style={[styles.countdownText, { color: theme.success }]}>Renews in 23 days</Text>
             </View>
           </View>
         </View>
         
         {/* Money Transfer Settings */}
         <View style={styles.section}>
-          <Text style={styles.instruction}>
+          <Text style={[styles.instruction, { color: theme.textSecondary }]}>
             Choose SIM(s) for money related transactions.{'\n'}
             NB: SIM must be an agent SIM.
           </Text>
           
-          <Text style={styles.sectionTitle}>Money Transfer SIM Settings</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Money Transfer SIM Settings</Text>
           
           <NetworkSection
             title="MTN Mobile Money Transactions"
@@ -277,8 +282,8 @@ export default function SettingsScreen({ navigation }) {
 
         {/* Airtime Transfer Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Airtime Transfer SIM Settings</Text>
-          <Text style={styles.instruction}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Airtime Transfer SIM Settings</Text>
+          <Text style={[styles.instruction, { color: theme.textSecondary }]}>
             Choose SIM(s) for airtime transfer transactions.{'\n'}
             NB: SIM must be an agent SIM.
           </Text>
@@ -309,7 +314,7 @@ export default function SettingsScreen({ navigation }) {
         
         {/* Security & Authentication */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Security & Authentication</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Security & Authentication</Text>
           
           <View style={styles.settingItem}>
             <View style={styles.settingInfo}>
@@ -319,9 +324,9 @@ export default function SettingsScreen({ navigation }) {
                 color={biometricAvailable ? '#3B82F6' : '#9CA3AF'} 
               />
               <View style={styles.biometricLabelContainer}>
-                <Text style={styles.settingLabel}>Biometric Login</Text>
+                <Text style={[styles.settingLabel, { color: theme.text }]}>Biometric Login</Text>
                 {biometricType && (
-                  <Text style={styles.biometricType}>({biometricType})</Text>
+                  <Text style={[styles.biometricType, { color: theme.textSecondary }]}>({biometricType})</Text>
                 )}
               </View>
             </View>
@@ -334,7 +339,7 @@ export default function SettingsScreen({ navigation }) {
             />
           </View>
           
-          <Text style={[styles.settingDescription, !biometricAvailable && styles.disabledText]}>
+          <Text style={[styles.settingDescription, { color: theme.textSecondary }, !biometricAvailable && styles.disabledText]}>
             {biometricAvailable 
               ? `Use ${biometricType.toLowerCase()} to unlock the app securely` 
               : 'Biometric authentication not available on this device'
@@ -346,12 +351,12 @@ export default function SettingsScreen({ navigation }) {
         
         {/* Notifications */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notification Preferences</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Notification Preferences</Text>
           
           <View style={styles.settingItem}>
             <View style={styles.settingInfo}>
               <Ionicons name="notifications" size={20} color="#10B981" />
-              <Text style={styles.settingLabel}>Push Notifications</Text>
+              <Text style={[styles.settingLabel, { color: theme.text }]}>Push Notifications</Text>
             </View>
             <Switch
               value={notifications.push}
@@ -363,7 +368,7 @@ export default function SettingsScreen({ navigation }) {
           <View style={styles.settingItem}>
             <View style={styles.settingInfo}>
               <Ionicons name="mail" size={20} color="#F59E0B" />
-              <Text style={styles.settingLabel}>Email Alerts</Text>
+              <Text style={[styles.settingLabel, { color: theme.text }]}>Email Alerts</Text>
             </View>
             <Switch
               value={notifications.email}
@@ -375,7 +380,7 @@ export default function SettingsScreen({ navigation }) {
           <View style={styles.settingItem}>
             <View style={styles.settingInfo}>
               <Ionicons name="card" size={20} color="#8B5CF6" />
-              <Text style={styles.settingLabel}>Transaction Alerts</Text>
+              <Text style={[styles.settingLabel, { color: theme.text }]}>Transaction Alerts</Text>
             </View>
             <Switch
               value={notifications.transactions}
@@ -389,27 +394,27 @@ export default function SettingsScreen({ navigation }) {
         
         {/* App Preferences */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>App Preferences</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>App Preferences</Text>
           
           <TouchableOpacity style={styles.settingItem}>
             <View style={styles.settingInfo}>
               <Ionicons name="language" size={20} color="#06B6D4" />
-              <Text style={styles.settingLabel}>Language</Text>
+              <Text style={[styles.settingLabel, { color: theme.text }]}>Language</Text>
             </View>
             <View style={styles.settingValue}>
-              <Text style={styles.valueText}>{selectedLanguage}</Text>
+              <Text style={[styles.valueText, { color: theme.textSecondary }]}>{selectedLanguage}</Text>
               <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
             </View>
           </TouchableOpacity>
           
           <View style={styles.settingItem}>
             <View style={styles.settingInfo}>
-              <Ionicons name={darkMode ? "moon" : "sunny"} size={20} color={darkMode ? "#6366F1" : "#F59E0B"} />
-              <Text style={styles.settingLabel}>Dark Mode</Text>
+              <Ionicons name={isDark ? "moon" : "sunny"} size={20} color={isDark ? "#6366F1" : "#F59E0B"} />
+              <Text style={[styles.settingLabel, { color: theme.text }]}>Dark Mode</Text>
             </View>
             <Switch
-              value={darkMode}
-              onValueChange={setDarkMode}
+              value={isDark}
+              onValueChange={toggleTheme}
               trackColor={{ false: '#E5E7EB', true: '#6366F1' }}
             />
           </View>
@@ -417,7 +422,7 @@ export default function SettingsScreen({ navigation }) {
           <View style={styles.settingItem}>
             <View style={styles.settingInfo}>
               <Ionicons name="phone-portrait" size={20} color="#EC4899" />
-              <Text style={styles.settingLabel}>Haptic Feedback</Text>
+              <Text style={[styles.settingLabel, { color: theme.text }]}>Haptic Feedback</Text>
             </View>
             <Switch
               value={hapticFeedback}
@@ -429,7 +434,7 @@ export default function SettingsScreen({ navigation }) {
           <View style={styles.settingItem}>
             <View style={styles.settingInfo}>
               <Ionicons name="volume-high" size={20} color="#10B981" />
-              <Text style={styles.settingLabel}>Sound Effects</Text>
+              <Text style={[styles.settingLabel, { color: theme.text }]}>Sound Effects</Text>
             </View>
             <Switch
               value={soundEffects}
@@ -443,15 +448,15 @@ export default function SettingsScreen({ navigation }) {
         
         {/* Data Management */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Data Management</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Data Management</Text>
           
           <View style={styles.settingItem}>
             <View style={styles.settingInfo}>
               <Ionicons name="time" size={20} color="#EF4444" />
-              <Text style={styles.settingLabel}>Transaction History Retention</Text>
+              <Text style={[styles.settingLabel, { color: theme.text }]}>Transaction History Retention</Text>
             </View>
             <View style={styles.settingValue}>
-              <Text style={styles.valueText}>{historyRetention === '1month' ? '1 Month' : historyRetention === '3months' ? '3 Months' : '6 Months'}</Text>
+              <Text style={[styles.valueText, { color: theme.textSecondary }]}>{historyRetention === '1month' ? '1 Month' : historyRetention === '3months' ? '3 Months' : '6 Months'}</Text>
               <Ionicons name="chevron-forward" size={16} color="#9CA3AF" />
             </View>
           </View>
@@ -466,14 +471,14 @@ export default function SettingsScreen({ navigation }) {
 
         {/* Enhanced Extras Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Extras</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Extras</Text>
           
           {/* Abnormal Transaction Warning */}
-          <View style={styles.extraFeature}>
+          <View style={[styles.extraFeature, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={styles.featureHeader}>
               <View style={styles.featureInfo}>
                 <Ionicons name="warning-outline" size={20} color="#F59E0B" />
-                <Text style={styles.featureTitle}>Abnormal Transaction Amount Warning</Text>
+                <Text style={[styles.featureTitle, { color: theme.text }]}>Abnormal Transaction Amount Warning</Text>
               </View>
               <Switch
                 value={abnormalWarningEnabled}
@@ -482,7 +487,7 @@ export default function SettingsScreen({ navigation }) {
                 thumbColor={abnormalWarningEnabled ? '#FFFFFF' : '#9CA3AF'}
               />
             </View>
-            <Text style={styles.featureDescription}>
+            <Text style={[styles.featureDescription, { color: theme.textSecondary }]}>
               Get alerts before executing transactions that exceed your set thresholds
             </Text>
             
@@ -539,11 +544,11 @@ export default function SettingsScreen({ navigation }) {
           </View>
           
           {/* Phone Number History */}
-          <View style={styles.extraFeature}>
+          <View style={[styles.extraFeature, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <View style={styles.featureHeader}>
               <View style={styles.featureInfo}>
                 <Ionicons name="people-outline" size={20} color="#10B981" />
-                <Text style={styles.featureTitle}>Smart Customer Suggestions</Text>
+                <Text style={[styles.featureTitle, { color: theme.text }]}>Smart Customer Suggestions</Text>
               </View>
               <Switch
                 value={phoneHistoryEnabled}
@@ -552,7 +557,7 @@ export default function SettingsScreen({ navigation }) {
                 thumbColor={phoneHistoryEnabled ? '#FFFFFF' : '#9CA3AF'}
               />
             </View>
-            <Text style={styles.featureDescription}>
+            <Text style={[styles.featureDescription, { color: theme.textSecondary }]}>
               Get instant suggestions for frequent customers as you type phone numbers. Save time on repeat transactions.
             </Text>
             

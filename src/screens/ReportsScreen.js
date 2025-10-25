@@ -6,10 +6,12 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { AppContext } from '../state/AppContext';
 import { spacing, colors } from '../theme/tokens';
+import { useTheme } from '../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
 export default function ReportsScreen({ navigation }) {
+  const { theme } = useTheme();
   const { transactions } = useContext(AppContext);
 
   // Calculate metrics with realistic data
@@ -94,23 +96,23 @@ export default function ReportsScreen({ navigation }) {
 
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="dark" backgroundColor="#f5f7f8" />
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <StatusBar style={theme.statusBar} backgroundColor={theme.surface} />
       {/* Top App Bar */}
-      <View style={styles.topBar}>
+      <View style={[styles.topBar, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
         <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <MaterialIcons name="arrow-back" size={24} color={colors.textLight} />
         </TouchableOpacity>
-        <Text style={styles.title}>Reports & Analytics</Text>
+        <Text style={[styles.title, { color: theme.text }]}>Reports & Analytics</Text>
         <TouchableOpacity style={styles.downloadButton} onPress={handleDownload}>
           <MaterialIcons name="download" size={24} color={colors.textLight} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView style={[styles.scrollView, { backgroundColor: theme.background }]} showsVerticalScrollIndicator={false}>
         {/* Enhanced Date Range Selector */}
-        <View style={styles.dateRangeContainer}>
-          <Text style={styles.sectionTitle}>Time Period</Text>
+        <View style={[styles.dateRangeContainer, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Time Period</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateRangeScroll}>
             {dateRanges.map((range) => (
               <TouchableOpacity
@@ -139,7 +141,7 @@ export default function ReportsScreen({ navigation }) {
         </View>
 
         {/* Enhanced Key Metric Cards */}
-        <View style={styles.metricsContainer}>
+        <View style={[styles.metricsContainer, { backgroundColor: theme.background }]}>
           <LinearGradient colors={['#6366F1', '#4F46E5']} style={styles.metricCard}>
             <View style={styles.metricIcon}>
               <Ionicons name="trending-up" size={26} color="#fff" />
@@ -169,27 +171,27 @@ export default function ReportsScreen({ navigation }) {
         </View>
 
         {/* Enhanced Charts Section */}
-        <View style={styles.chartsContainer}>
+        <View style={[styles.chartsContainer, { backgroundColor: theme.background }]}>
           {/* Weekly Bar Chart with Animation */}
-          <View style={styles.chartCard}>
+          <View style={[styles.chartCard, { backgroundColor: theme.card }]}>
             <View style={styles.chartHeader}>
               <View>
-                <Text style={styles.chartTitle}>{selectedDateRange} Transaction Distribution</Text>
-                <Text style={styles.chartSubtitle}>{selectedDateRange === 'Today' ? 'Hourly' : selectedDateRange === 'This Month' ? 'Weekly' : 'Daily'} performance with trends</Text>
+                <Text style={[styles.chartTitle, { color: theme.text }]}>{selectedDateRange} Transaction Distribution</Text>
+                <Text style={[styles.chartSubtitle, { color: theme.textSecondary }]}>{selectedDateRange === 'Today' ? 'Hourly' : selectedDateRange === 'This Month' ? 'Weekly' : 'Daily'} performance with trends</Text>
               </View>
               <View style={styles.chartActions}>
-                <TouchableOpacity style={styles.chartActionButton}>
-                  <Ionicons name="download-outline" size={18} color="#6B7280" />
+                <TouchableOpacity style={[styles.chartActionButton, { backgroundColor: theme.surface }]}>
+                  <Ionicons name="download-outline" size={18} color={theme.textSecondary} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.chartActionButton}>
-                  <Ionicons name="share-outline" size={18} color="#6B7280" />
+                <TouchableOpacity style={[styles.chartActionButton, { backgroundColor: theme.surface }]}>
+                  <Ionicons name="share-outline" size={18} color={theme.textSecondary} />
                 </TouchableOpacity>
               </View>
             </View>
             
             {/* Bar Chart */}
-            <View style={styles.barChartContainer}>
-              <View style={styles.barChartGrid}>
+            <View style={[styles.barChartContainer, { backgroundColor: theme.card }]}>
+              <View style={[styles.barChartGrid, { backgroundColor: theme.surface }]}>
                 {currentData.map((item, index) => {
                   const maxTransactions = Math.max(...currentData.map(d => d.transactions));
                   const barHeightPercent = (item.transactions / maxTransactions) * 100;
@@ -198,14 +200,14 @@ export default function ReportsScreen({ navigation }) {
                     <TouchableOpacity key={item.day} style={styles.barItem}>
                       {/* Value Display */}
                       <View style={styles.valueDisplay}>
-                        <Text style={styles.transactionValue}>{item.transactions}</Text>
+                        <Text style={[styles.transactionValue, { color: theme.text }]}>{item.transactions}</Text>
                         <Text style={[styles.trendValue, { 
-                          color: item.trend.includes('+') ? '#10B981' : '#EF4444' 
+                          color: item.trend.includes('+') ? theme.success : theme.error 
                         }]}>{item.trend}</Text>
                       </View>
                       
                       {/* Animated Bar */}
-                      <View style={styles.barContainer}>
+                      <View style={[styles.barContainer, { backgroundColor: theme.border }]}>
                         <View style={[styles.animatedBar, {
                           height: `${barHeightPercent}%`,
                           backgroundColor: item.color
@@ -222,8 +224,8 @@ export default function ReportsScreen({ navigation }) {
                       
                       {/* Labels */}
                       <View style={styles.barLabels}>
-                        <Text style={styles.dayLabel}>{item.short}</Text>
-                        <Text style={styles.percentLabel}>{item.value}%</Text>
+                        <Text style={[styles.dayLabel, { color: theme.text }]}>{item.short}</Text>
+                        <Text style={[styles.percentLabel, { color: theme.textSecondary }]}>{item.value}%</Text>
                       </View>
                       
 
@@ -233,55 +235,55 @@ export default function ReportsScreen({ navigation }) {
               </View>
               
               {/* Chart Summary */}
-              <View style={styles.chartSummaryCard}>
-                <LinearGradient colors={['#F8FAFC', '#EFF6FF']} style={styles.summaryGradient}>
+              <View style={[styles.chartSummaryCard, { backgroundColor: theme.card }]}>
+                <View style={[styles.summaryGradient, { backgroundColor: theme.surface }]}>
                   <View style={styles.summaryGrid}>
                     <View style={styles.summaryMetric}>
                       <Ionicons name="trending-up" size={20} color="#3B82F6" />
-                      <Text style={styles.summaryLabel}>Total Volume</Text>
-                      <Text style={styles.summaryValue}>{totalCurrentTransactions.toLocaleString()}</Text>
+                      <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>Total Volume</Text>
+                      <Text style={[styles.summaryValue, { color: theme.text }]}>{totalCurrentTransactions.toLocaleString()}</Text>
                     </View>
                     <View style={styles.summaryMetric}>
                       <Ionicons name="star" size={20} color="#F59E0B" />
-                      <Text style={styles.summaryLabel}>Peak {selectedDateRange === 'Today' ? 'Hour' : selectedDateRange === 'This Month' ? 'Week' : 'Day'}</Text>
-                      <Text style={styles.summaryValue}>{currentData.reduce((max, item) => item.transactions > max.transactions ? item : max).short}</Text>
+                      <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>Peak {selectedDateRange === 'Today' ? 'Hour' : selectedDateRange === 'This Month' ? 'Week' : 'Day'}</Text>
+                      <Text style={[styles.summaryValue, { color: theme.text }]}>{currentData.reduce((max, item) => item.transactions > max.transactions ? item : max).short}</Text>
                     </View>
                     <View style={styles.summaryMetric}>
                       <Ionicons name="analytics" size={20} color="#10B981" />
-                      <Text style={styles.summaryLabel}>Growth</Text>
-                      <Text style={[styles.summaryValue, { color: '#10B981' }]}>+{metrics.change}%</Text>
+                      <Text style={[styles.summaryLabel, { color: theme.textSecondary }]}>Growth</Text>
+                      <Text style={[styles.summaryValue, { color: theme.success }]}>+{metrics.change}%</Text>
                     </View>
                   </View>
-                </LinearGradient>
+                </View>
               </View>
             </View>
           </View>
 
           {/* Enhanced Line Chart */}
-          <View style={styles.chartCard}>
+          <View style={[styles.chartCard, { backgroundColor: theme.card }]}>
             <View style={styles.chartHeader}>
               <View>
-                <Text style={styles.chartTitle}>Transaction Trends</Text>
-                <Text style={styles.chartSubtitle}>Daily volume comparison</Text>
+                <Text style={[styles.chartTitle, { color: theme.text }]}>Transaction Trends</Text>
+                <Text style={[styles.chartSubtitle, { color: theme.textSecondary }]}>Daily volume comparison</Text>
               </View>
-              <View style={styles.trendIndicator}>
+              <View style={[styles.trendIndicator, { backgroundColor: theme.surface }]}>
                 <Ionicons name="trending-up" size={16} color="#10B981" />
-                <Text style={styles.trendText}>+{metrics.change}%</Text>
+                <Text style={[styles.trendText, { color: theme.success }]}>+{metrics.change}%</Text>
               </View>
             </View>
             
-            <View style={styles.lineChart}>
+            <View style={[styles.lineChart, { backgroundColor: theme.surface }]}>
               {currentData.map((item, index) => (
                 <View key={item.day} style={styles.linePoint}>
-                  <View style={styles.pointWrapper}>
+                  <View style={[styles.pointWrapper, { backgroundColor: theme.border }]}>
                     <View style={[styles.point, { backgroundColor: item.color }]} />
                     <View style={[styles.pointLine, { 
                       height: `${(item.transactions / Math.max(...currentData.map(d => d.transactions))) * 100}%`,
                       backgroundColor: item.color + '40'
                     }]} />
                   </View>
-                  <Text style={styles.pointLabel}>{item.short}</Text>
-                  <Text style={styles.pointValue}>{item.transactions}</Text>
+                  <Text style={[styles.pointLabel, { color: theme.textSecondary }]}>{item.short}</Text>
+                  <Text style={[styles.pointValue, { color: theme.text }]}>{item.transactions}</Text>
                 </View>
               ))}
             </View>
@@ -289,10 +291,10 @@ export default function ReportsScreen({ navigation }) {
         </View>
 
         {/* Enhanced Recent Activity Section */}
-        <View style={styles.activityContainer}>
+        <View style={[styles.activityContainer, { backgroundColor: theme.background }]}>
           <View style={styles.activityHeader}>
-            <Text style={styles.activityTitle}>Recent Activity</Text>
-            <TouchableOpacity style={styles.filterButton}>
+            <Text style={[styles.activityTitle, { color: theme.text }]}>Recent Activity</Text>
+            <TouchableOpacity style={[styles.filterButton, { backgroundColor: theme.surface }]}>
               <Ionicons name="filter" size={20} color="#6B7280" />
             </TouchableOpacity>
           </View>
@@ -314,25 +316,25 @@ export default function ReportsScreen({ navigation }) {
                                 transaction.status === 'Pending' ? '#F59E0B' : '#EF4444';
               
               return (
-                <TouchableOpacity key={index} style={styles.activityItem}>
+                <TouchableOpacity key={index} style={[styles.activityItem, { backgroundColor: theme.card }]}>
                   <View style={[styles.activityIconContainer, { backgroundColor: config.bgColor }]}>
                     <Ionicons name={config.icon} size={24} color={config.color} />
                   </View>
                   
                   <View style={styles.activityContent}>
                     <View style={styles.activityMainInfo}>
-                      <Text style={styles.activityType}>
+                      <Text style={[styles.activityType, { color: theme.text }]}>
                         {transaction.type === 'cash_in' ? 'Cash In' : 
                          transaction.type === 'cash_out' ? 'Cash Out' : 
                          transaction.type === 'bill_pay' ? 'Bill Payment' : 'Airtime Purchase'}
                       </Text>
-                      <Text style={styles.activitySubInfo}>
+                      <Text style={[styles.activitySubInfo, { color: theme.textSecondary }]}>
                         {transaction.phone || transaction.reference || 'N/A'}
                       </Text>
                     </View>
                     
                     <View style={styles.activityMeta}>
-                      <Text style={styles.activityDate}>{transaction.date}</Text>
+                      <Text style={[styles.activityDate, { color: theme.textSecondary }]}>{transaction.date}</Text>
                       <View style={[styles.statusBadge, { backgroundColor: `${statusColor}20` }]}>
                         <Text style={[styles.statusText, { color: statusColor }]}>
                           {transaction.status}
@@ -352,8 +354,8 @@ export default function ReportsScreen({ navigation }) {
             })}
           </View>
           
-          <TouchableOpacity style={styles.viewAllButton}>
-            <Text style={styles.viewAllText}>View All Transactions</Text>
+          <TouchableOpacity style={[styles.viewAllButton, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Text style={[styles.viewAllText, { color: theme.primary }]}>View All Transactions</Text>
             <Ionicons name="arrow-forward" size={16} color="#3B82F6" />
           </TouchableOpacity>
         </View>

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { spacing, colors } from '../theme/tokens';
+import { useTheme } from '../context/ThemeContext';
 
 // Status color scheme
 const statusColors = {
@@ -18,14 +19,18 @@ const statusIcons = {
 };
 
 export default function TransactionCard({ tx }) {
+  const { theme } = useTheme();
   const statusColor = statusColors[tx.status] || colors.muted;
   const statusIcon = statusIcons[tx.status] || 'help';
-  const isCashIn = tx.type === 'Cash In';
+  const isCashIn = tx.type === 'Cash In' || tx.type === 'cash_in';
   const amountPrefix = isCashIn ? '+' : '-';
   const amountColor = isCashIn ? '#22c55e' : '#ef4444';
+  
+  // Format transaction type for display
+  const displayType = tx.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: theme.card }]}>
       <View style={styles.row}>
         <View style={styles.leftSection}>
           <View style={styles.typeRow}>
@@ -36,9 +41,9 @@ export default function TransactionCard({ tx }) {
                 color={isCashIn ? '#22c55e' : '#ef4444'} 
               />
             </View>
-            <Text style={styles.type}>{tx.type}</Text>
+            <Text style={[styles.type, { color: theme.text }]}>{displayType}</Text>
           </View>
-          <Text style={styles.phone}>{tx.phone}</Text>
+          <Text style={[styles.phone, { color: theme.textSecondary }]}>{tx.phone}</Text>
         </View>
         <View style={styles.rightSection}>
           <Text style={[styles.amount, { color: amountColor }]}>

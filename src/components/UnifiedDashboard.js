@@ -3,8 +3,10 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } 
 import { MaterialIcons } from '@expo/vector-icons';
 import { useMultiNetwork } from '../state/MultiNetworkContext';
 import { MultiNetworkAPIManager } from '../services/MobileMoneyAPI';
+import { useTheme } from '../context/ThemeContext';
 
 export default function UnifiedDashboard() {
+  const { theme } = useTheme();
   const {
     accounts,
     transactions,
@@ -53,14 +55,14 @@ export default function UnifiedDashboard() {
     const balance = getNetworkBalance(network.id);
 
     return (
-      <View key={network.id} style={styles.networkCard}>
+      <View key={network.id} style={[styles.networkCard, { backgroundColor: theme.card }]}>
         <View style={styles.networkHeader}>
           <View style={[styles.networkIcon, { backgroundColor: network.color }]}>
             <MaterialIcons name="account-balance-wallet" size={24} color="#fff" />
           </View>
           <View style={styles.networkInfo}>
-            <Text style={styles.networkName}>{network.name}</Text>
-            <Text style={styles.accountCount}>
+            <Text style={[styles.networkName, { color: theme.text }]}>{network.name}</Text>
+            <Text style={[styles.accountCount, { color: theme.textSecondary }]}>
               {networkAccounts.length} account{networkAccounts.length !== 1 ? 's' : ''}
             </Text>
           </View>
@@ -70,31 +72,31 @@ export default function UnifiedDashboard() {
         </View>
 
         <View style={styles.balanceSection}>
-          <Text style={styles.balanceLabel}>Total Balance</Text>
-          <Text style={styles.balanceAmount}>GHS {balance?.toFixed(2) || '0.00'}</Text>
+          <Text style={[styles.balanceLabel, { color: theme.textSecondary }]}>Total Balance</Text>
+          <Text style={[styles.balanceAmount, { color: theme.text }]}>GHS {balance?.toFixed(2) || '0.00'}</Text>
         </View>
 
         <View style={styles.quickActions}>
           <TouchableOpacity style={styles.actionButton}>
             <MaterialIcons name="send" size={20} color="#007bff" />
-            <Text style={styles.actionText}>Send</Text>
+            <Text style={[styles.actionText, { color: theme.textSecondary }]}>Send</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton}>
             <MaterialIcons name="call-received" size={20} color="#28a745" />
-            <Text style={styles.actionText}>Cash In</Text>
+            <Text style={[styles.actionText, { color: theme.textSecondary }]}>Cash In</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton}>
             <MaterialIcons name="call-made" size={20} color="#dc3545" />
-            <Text style={styles.actionText}>Cash Out</Text>
+            <Text style={[styles.actionText, { color: theme.textSecondary }]}>Cash Out</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton}>
             <MaterialIcons name="phone-android" size={20} color="#ffc107" />
-            <Text style={styles.actionText}>Airtime</Text>
+            <Text style={[styles.actionText, { color: theme.textSecondary }]}>Airtime</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.recentTransactions}>
-          <Text style={styles.sectionTitle}>Recent Transactions</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>Recent Transactions</Text>
           {networkTransactions.slice(0, 3).map((transaction) => (
             <View key={transaction.id} style={styles.transactionItem}>
               <View style={styles.transactionIcon}>
@@ -114,13 +116,13 @@ export default function UnifiedDashboard() {
                 />
               </View>
               <View style={styles.transactionInfo}>
-                <Text style={styles.transactionType}>
+                <Text style={[styles.transactionType, { color: theme.text }]}>
                   {transaction.type === 'cash_in' ? 'Cash In' :
                    transaction.type === 'cash_out' ? 'Cash Out' :
                    transaction.type === 'send_money' ? 'Send Money' :
                    'Transaction'}
                 </Text>
-                <Text style={styles.transactionDate}>
+                <Text style={[styles.transactionDate, { color: theme.textSecondary }]}>
                   {new Date(transaction.timestamp).toLocaleDateString()}
                 </Text>
               </View>
@@ -137,7 +139,7 @@ export default function UnifiedDashboard() {
             </View>
           ))}
           {networkTransactions.length === 0 && (
-            <Text style={styles.noTransactions}>No recent transactions</Text>
+            <Text style={[styles.noTransactions, { color: theme.textSecondary }]}>No recent transactions</Text>
           )}
         </View>
       </View>
@@ -150,15 +152,15 @@ export default function UnifiedDashboard() {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
       {/* Total Balance Overview */}
-      <View style={styles.totalBalanceCard}>
-        <Text style={styles.totalBalanceLabel}>Total Balance Across All Networks</Text>
-        <Text style={styles.totalBalanceAmount}>GHS {totalBalance.toFixed(2)}</Text>
+      <View style={[styles.totalBalanceCard, { backgroundColor: theme.card }]}>
+        <Text style={[styles.totalBalanceLabel, { color: theme.textSecondary }]}>Total Balance Across All Networks</Text>
+        <Text style={[styles.totalBalanceAmount, { color: theme.text }]}>GHS {totalBalance.toFixed(2)}</Text>
         <View style={styles.networkBreakdown}>
           {Object.keys(networks).map((networkId) => {
             const balance = getNetworkBalance(networkId.toLowerCase()) || 0;
@@ -167,7 +169,7 @@ export default function UnifiedDashboard() {
             return (
               <View key={networkId} style={styles.networkBalance}>
                 <View style={[styles.networkIndicator, { backgroundColor: networks[networkId].color }]} />
-                <Text style={styles.networkBalanceText}>
+                <Text style={[styles.networkBalanceText, { color: theme.textSecondary }]}>
                   {networks[networkId].name}: GHS {balance.toFixed(2)} ({percentage.toFixed(1)}%)
                 </Text>
               </View>
@@ -180,15 +182,15 @@ export default function UnifiedDashboard() {
       {Object.keys(networks).map((networkId) => renderNetworkCard(networkId))}
 
       {/* Quick Stats */}
-      <View style={styles.statsCard}>
-        <Text style={styles.statsTitle}>Today's Activity</Text>
+      <View style={[styles.statsCard, { backgroundColor: theme.card }]}>
+        <Text style={[styles.statsTitle, { color: theme.text }]}>Today's Activity</Text>
         <View style={styles.statsGrid}>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{transactions.filter(t => {
               const today = new Date().toDateString();
               return new Date(t.timestamp).toDateString() === today;
             }).length}</Text>
-            <Text style={styles.statLabel}>Transactions</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Transactions</Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>
@@ -197,7 +199,7 @@ export default function UnifiedDashboard() {
                 return new Date(t.timestamp).toDateString() === today && t.type === 'cash_in';
               }).length}
             </Text>
-            <Text style={styles.statLabel}>Cash Ins</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Cash Ins</Text>
           </View>
           <View style={styles.statItem}>
             <Text style={styles.statValue}>
@@ -206,7 +208,7 @@ export default function UnifiedDashboard() {
                 return new Date(t.timestamp).toDateString() === today && t.type === 'cash_out';
               }).length}
             </Text>
-            <Text style={styles.statLabel}>Cash Outs</Text>
+            <Text style={[styles.statLabel, { color: theme.textSecondary }]}>Cash Outs</Text>
           </View>
         </View>
       </View>
